@@ -1,0 +1,10 @@
+<Solution>
+    <Project Path="src/Banguat.ExchangeRates.Cli/Banguat.ExchangeRates.Cli.csproj" />
+    <Project Path="src/Banguat.ExchangeRates/Banguat.ExchangeRates.csproj" />
+    <Project Path="src\Banguat.ExchangeRates.AppHost\Banguat.ExchangeRates.AppHost.csproj" />
+    <Project Path="src\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj" />
+    <Project Path="src\Banguat.ExchangeRates.ServiceDefaults\Banguat.ExchangeRates.ServiceDefaults.csproj" />
+    <Project Path="tests/Banguat.ExchangeRates.Cli.Tests/Banguat.ExchangeRates.Cli.Tests.csproj" />
+    <Project Path="tests/Banguat.ExchangeRates.Tests/Banguat.ExchangeRates.Tests.csproj" />
+    <Project Path="tests\Banguat.ExchangeRates.McpServer.Tests\Banguat.ExchangeRates.McpServer.Tests.csproj" />
+</Solution>
