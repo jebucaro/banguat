@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "husky": {
+      "version": "0.9.1",
+      "commands": [
+        "husky"
+      ],
+      "rollForward": false
+    },
+    "dotnet-gitmoji": {
+      "version": "0.6.1",
+      "commands": [
+        "dotnet-gitmoji"
+      ],
+      "rollForward": false
+    }
+  }
+}
