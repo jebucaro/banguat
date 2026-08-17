@@ -46,18 +46,18 @@ public class GetCurrentRateTests
     }
 
     [Fact]
-    public async Task Handle_Should_ReturnUnexpectedShape_WhenNeitherListPopulated()
+    public async Task Handle_Should_ReturnEmptyList_WhenNeitherShapeIsPopulated()
     {
         var document = XDocument.Parse(
-            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesResult><TotalItems>0</TotalItems></VariablesResult></VariablesResponse></soap:Body></soap:Envelope>""");
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesResult><CambioDia /><TotalItems>0</TotalItems></VariablesResult></VariablesResponse></soap:Body></soap:Envelope>""");
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrentRate.Handler(transport);
 
         Result<GetCurrentRate.Response> result = await handler.Handle(
-            new GetCurrentRate.Query(new CurrencyCode(999)), CancellationToken.None);
+            new GetCurrentRate.Query(new CurrencyCode(9999)), CancellationToken.None);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Value.Rates);
     }
 
     [Fact]

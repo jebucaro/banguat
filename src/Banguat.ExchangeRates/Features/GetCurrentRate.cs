@@ -10,6 +10,11 @@ public static class GetCurrentRate
 {
     public sealed record Query(CurrencyCode Currency) : IQuery<Response>;
 
+    /// <summary>
+    /// For USD, the live service returns a single reference rate rather than a bid/ask spread —
+    /// in that case <see cref="Buy"/> and <see cref="Sell"/> are both set to that same reference rate.
+    /// For every other currency, <see cref="Buy"/> and <see cref="Sell"/> are the service's actual buy/sell quote.
+    /// </summary>
     public sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 
     public sealed record Response(IReadOnlyList<RatePoint> Rates);
@@ -65,7 +70,7 @@ public static class GetCurrentRate
                 return Result.Success(new Response(points));
             }
 
-            return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("Variables"));
+            return Result.Success(new Response([]));
         }
     }
 }

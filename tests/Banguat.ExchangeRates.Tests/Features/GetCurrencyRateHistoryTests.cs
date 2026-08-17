@@ -27,6 +27,12 @@ public class GetCurrencyRateHistoryTests
         Assert.Equal(
             "18",
             transport.LastOperation!.Element(BanguatSoapNamespaces.Service + "moneda")!.Value);
+        Assert.Equal(
+            "01/08/2026",
+            transport.LastOperation!.Element(BanguatSoapNamespaces.Service + "fechainit")!.Value);
+        Assert.Equal(
+            "03/08/2026",
+            transport.LastOperation!.Element(BanguatSoapNamespaces.Service + "fechafin")!.Value);
     }
 
     [Fact]

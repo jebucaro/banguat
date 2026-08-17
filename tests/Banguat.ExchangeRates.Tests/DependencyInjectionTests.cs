@@ -1,3 +1,6 @@
+using Banguat.ExchangeRates.Common.Messaging;
+using Banguat.ExchangeRates.Diagnostics;
+using Banguat.ExchangeRates.Features;
 using Banguat.ExchangeRates.Soap;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,5 +34,18 @@ public class DependencyInjectionTests
         HttpClient httpClient = httpClientFactory.CreateClient(nameof(IBanguatSoapTransport));
 
         Assert.Equal(customAddress, httpClient.BaseAddress);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_Should_WrapHandlersWithTracingDecorator()
+    {
+        var services = new ServiceCollection();
+        services.AddBanguatExchangeRates();
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        var handler = provider.GetRequiredService<IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>();
+
+        Assert.IsType<TracingDecorator.QueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>(handler);
     }
 }
