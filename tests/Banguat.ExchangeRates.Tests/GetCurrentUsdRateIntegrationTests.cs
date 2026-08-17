@@ -12,10 +12,10 @@ public class GetCurrentUsdRateIntegrationTests
     {
         var services = new ServiceCollection();
         services.AddBanguatExchangeRates();
-        using ServiceProvider provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
         var client = provider.GetRequiredService<IBanguatExchangeRateClient>();
 
-        Result<GetCurrentUsdRate.Response> result = await client.GetCurrentUsdRateAsync();
+        var result = await client.GetCurrentUsdRateAsync();
 
         Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Description : string.Empty);
         Assert.True(result.Value.Rate > 0);

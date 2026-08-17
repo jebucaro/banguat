@@ -14,7 +14,7 @@ public class GetAvailableCurrenciesTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetAvailableCurrencies.Handler(transport);
 
-        Result<GetAvailableCurrencies.Response> result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
+        var result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.Currencies.Count);
@@ -33,7 +33,7 @@ public class GetAvailableCurrenciesTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetAvailableCurrencies.Handler(transport);
 
-        Result<GetAvailableCurrencies.Response> result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
+        var result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
@@ -46,7 +46,7 @@ public class GetAvailableCurrenciesTests
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
         var handler = new GetAvailableCurrencies.Handler(transport);
 
-        Result<GetAvailableCurrencies.Response> result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
+        var result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);

@@ -14,7 +14,7 @@ public class DependencyInjectionTests
         var services = new ServiceCollection();
         services.AddBanguatExchangeRates();
 
-        using ServiceProvider provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
 
         var client = provider.GetRequiredService<IBanguatExchangeRateClient>();
 
@@ -29,9 +29,9 @@ public class DependencyInjectionTests
 
         services.AddBanguatExchangeRates(options => options.BaseAddress = customAddress);
 
-        using ServiceProvider provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
         var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-        HttpClient httpClient = httpClientFactory.CreateClient(nameof(IBanguatSoapTransport));
+        var httpClient = httpClientFactory.CreateClient(nameof(IBanguatSoapTransport));
 
         Assert.Equal(customAddress, httpClient.BaseAddress);
     }
@@ -42,7 +42,7 @@ public class DependencyInjectionTests
         var services = new ServiceCollection();
         services.AddBanguatExchangeRates();
 
-        using ServiceProvider provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
 
         var handler = provider.GetRequiredService<IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>();
 

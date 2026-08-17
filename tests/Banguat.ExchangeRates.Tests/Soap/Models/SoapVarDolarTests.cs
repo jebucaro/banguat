@@ -11,7 +11,7 @@ public class SoapVarDolarTests
         var element = XElement.Parse(
             """<VarDolar xmlns="http://www.banguat.gob.gt/variables/ws/"><fecha>17/08/2026</fecha><referencia>7.61992</referencia></VarDolar>""");
 
-        SoapVarDolar? result = SoapVarDolar.FromElement(element);
+        var result = SoapVarDolar.FromElement(element);
 
         Assert.NotNull(result);
         Assert.Equal(new DateOnly(2026, 8, 17), result.Fecha);

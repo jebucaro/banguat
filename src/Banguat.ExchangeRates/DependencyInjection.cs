@@ -23,9 +23,9 @@ public static class DependencyInjection
         services.Scan(scan => scan.FromAssembliesOf(typeof(DependencyInjection))
             .AddClasses(classes => classes
                 .AssignableTo(typeof(IQueryHandler<,>))
-                .Where(type => !type.IsGenericTypeDefinition), publicOnly: false)
-                .AsImplementedInterfaces()
-                .WithScopedLifetime());
+                .Where(type => !type.IsGenericTypeDefinition), false)
+            .AsImplementedInterfaces()
+            .WithScopedLifetime());
 
         services.Decorate(typeof(IQueryHandler<,>), typeof(TracingDecorator.QueryHandler<,>));
 

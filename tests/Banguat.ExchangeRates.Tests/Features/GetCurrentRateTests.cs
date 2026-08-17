@@ -15,11 +15,11 @@ public class GetCurrentRateTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrentRate.Handler(transport);
 
-        Result<GetCurrentRate.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrentRate.Query(new CurrencyCode(18)), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        GetCurrentRate.RatePoint point = Assert.Single(result.Value.Rates);
+        var point = Assert.Single(result.Value.Rates);
         Assert.Equal(new DateOnly(2026, 8, 17), point.Date);
         Assert.Equal(17.0241m, point.Buy);
         Assert.Equal(17.0271m, point.Sell);
@@ -35,11 +35,11 @@ public class GetCurrentRateTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrentRate.Handler(transport);
 
-        Result<GetCurrentRate.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrentRate.Query(new CurrencyCode(2)), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        GetCurrentRate.RatePoint point = Assert.Single(result.Value.Rates);
+        var point = Assert.Single(result.Value.Rates);
         Assert.Equal(new DateOnly(2026, 8, 17), point.Date);
         Assert.Equal(7.61992m, point.Buy);
         Assert.Equal(7.61992m, point.Sell);
@@ -53,7 +53,7 @@ public class GetCurrentRateTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrentRate.Handler(transport);
 
-        Result<GetCurrentRate.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrentRate.Query(new CurrencyCode(9999)), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -67,7 +67,7 @@ public class GetCurrentRateTests
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
         var handler = new GetCurrentRate.Handler(transport);
 
-        Result<GetCurrentRate.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrentRate.Query(new CurrencyCode(2)), CancellationToken.None);
 
         Assert.True(result.IsFailure);

@@ -22,7 +22,7 @@ public static class GetAvailableCurrencies
         {
             var request = new XElement(BanguatSoapNamespaces.Service + OperationName);
 
-            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -34,18 +34,16 @@ public static class GetAvailableCurrencies
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            XElement? resultElement = document
+            var resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "VariablesDisponiblesResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
-            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("VariablesDisponibles"));
-            }
 
-            XElement? variablesContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Variables");
+            var variablesContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Variables");
 
-            IReadOnlyList<SoapVariable> variables = SoapXmlParsing.ParseList(
+            var variables = SoapXmlParsing.ParseList(
                 variablesContainer, BanguatSoapNamespaces.Service + "Variable", SoapVariable.FromElement);
 
             var currencies = variables

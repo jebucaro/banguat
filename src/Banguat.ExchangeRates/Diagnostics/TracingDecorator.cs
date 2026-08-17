@@ -15,18 +15,18 @@ internal static class TracingDecorator
     {
         public async Task<Result<TResponse>> Handle(TQuery query, CancellationToken cancellationToken)
         {
-            string operationName = typeof(TQuery).DeclaringType?.Name ?? typeof(TQuery).Name;
+            var operationName = typeof(TQuery).DeclaringType?.Name ?? typeof(TQuery).Name;
 
-            using Activity? activity = BanguatExchangeRatesDiagnostics.ActivitySource.StartActivity(
+            using var activity = BanguatExchangeRatesDiagnostics.ActivitySource.StartActivity(
                 $"Banguat.ExchangeRates.{operationName}", ActivityKind.Client);
             activity?.SetTag("banguat.operation", operationName);
 
-            long startTimestamp = Stopwatch.GetTimestamp();
+            var startTimestamp = Stopwatch.GetTimestamp();
 
-            Result<TResponse> result = await innerHandler.Handle(query, cancellationToken);
+            var result = await innerHandler.Handle(query, cancellationToken);
 
-            double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
-            string outcome = result.IsSuccess ? "success" : "failure";
+            var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
+            var outcome = result.IsSuccess ? "success" : "failure";
 
             BanguatExchangeRatesDiagnostics.CallCount.Add(
                 1,

@@ -14,7 +14,7 @@ public class GetCurrentUsdRateTextTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrentUsdRateText.Handler(transport);
 
-        Result<GetCurrentUsdRateText.Response> result = await handler.Handle(new GetCurrentUsdRateText.Query(), CancellationToken.None);
+        var result = await handler.Handle(new GetCurrentUsdRateText.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Contains("7.61992", result.Value.Text);
@@ -29,7 +29,7 @@ public class GetCurrentUsdRateTextTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrentUsdRateText.Handler(transport);
 
-        Result<GetCurrentUsdRateText.Response> result = await handler.Handle(new GetCurrentUsdRateText.Query(), CancellationToken.None);
+        var result = await handler.Handle(new GetCurrentUsdRateText.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
@@ -42,7 +42,7 @@ public class GetCurrentUsdRateTextTests
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
         var handler = new GetCurrentUsdRateText.Handler(transport);
 
-        Result<GetCurrentUsdRateText.Response> result = await handler.Handle(new GetCurrentUsdRateText.Query(), CancellationToken.None);
+        var result = await handler.Handle(new GetCurrentUsdRateText.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);

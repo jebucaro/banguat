@@ -15,7 +15,7 @@ public class GetUsdRateHistorySinceTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetUsdRateHistorySince.Handler(transport);
 
-        Result<GetUsdRateHistorySince.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetUsdRateHistorySince.Query(new DateOnly(2026, 8, 16)), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -40,7 +40,7 @@ public class GetUsdRateHistorySinceTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetUsdRateHistorySince.Handler(transport);
 
-        Result<GetUsdRateHistorySince.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetUsdRateHistorySince.Query(new DateOnly(2099, 1, 1)), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -55,7 +55,7 @@ public class GetUsdRateHistorySinceTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetUsdRateHistorySince.Handler(transport);
 
-        Result<GetUsdRateHistorySince.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetUsdRateHistorySince.Query(new DateOnly(2026, 8, 16)), CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -69,7 +69,7 @@ public class GetUsdRateHistorySinceTests
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
         var handler = new GetUsdRateHistorySince.Handler(transport);
 
-        Result<GetUsdRateHistorySince.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetUsdRateHistorySince.Query(new DateOnly(2026, 8, 16)), CancellationToken.None);
 
         Assert.True(result.IsFailure);

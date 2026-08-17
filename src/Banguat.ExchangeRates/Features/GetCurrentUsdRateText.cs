@@ -19,7 +19,7 @@ public static class GetCurrentUsdRateText
         {
             var request = new XElement(BanguatSoapNamespaces.Service + OperationName);
 
-            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -31,7 +31,7 @@ public static class GetCurrentUsdRateText
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            string? text = document
+            var text = document
                 .Descendants(BanguatSoapNamespaces.Service + "TipoCambioDiaStringResult")
                 .FirstOrDefault()?
                 .Value;

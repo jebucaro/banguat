@@ -16,14 +16,18 @@ public class TracingDecoratorTests
 
     private sealed class SucceedingHandler : IQueryHandler<Probe.Query, string>
     {
-        public Task<Result<string>> Handle(Probe.Query query, CancellationToken cancellationToken) =>
-            Task.FromResult(Result.Success("ok"));
+        public Task<Result<string>> Handle(Probe.Query query, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Result.Success("ok"));
+        }
     }
 
     private sealed class FailingHandler : IQueryHandler<Probe.Query, string>
     {
-        public Task<Result<string>> Handle(Probe.Query query, CancellationToken cancellationToken) =>
-            Task.FromResult(Result.Failure<string>(Error.Failure("Probe.Failed", "boom")));
+        public Task<Result<string>> Handle(Probe.Query query, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Result.Failure<string>(Error.Failure("Probe.Failed", "boom")));
+        }
     }
 
     [Fact]
@@ -42,10 +46,10 @@ public class TracingDecoratorTests
             new SucceedingHandler(),
             NullLogger<TracingDecorator.QueryHandler<Probe.Query, string>>.Instance);
 
-        Result<string> result = await decorator.Handle(new Probe.Query(), CancellationToken.None);
+        var result = await decorator.Handle(new Probe.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Activity activity = Assert.Single(activities);
+        var activity = Assert.Single(activities);
         Assert.Equal(ActivityStatusCode.Ok, activity.Status);
         Assert.Equal("Probe", activity.GetTagItem("banguat.operation"));
     }
@@ -66,10 +70,10 @@ public class TracingDecoratorTests
             new FailingHandler(),
             NullLogger<TracingDecorator.QueryHandler<Probe.Query, string>>.Instance);
 
-        Result<string> result = await decorator.Handle(new Probe.Query(), CancellationToken.None);
+        var result = await decorator.Handle(new Probe.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Activity activity = Assert.Single(activities);
+        var activity = Assert.Single(activities);
         Assert.Equal(ActivityStatusCode.Error, activity.Status);
         Assert.Equal("Probe.Failed", activity.GetTagItem("banguat.error.code"));
     }
@@ -83,9 +87,7 @@ public class TracingDecoratorTests
         {
             if (instrument.Meter.Name == BanguatExchangeRatesDiagnostics.MeterName &&
                 instrument.Name == "banguat.exchangerates.calls")
-            {
                 listener.EnableMeasurementEvents(instrument);
-            }
         };
         meterListener.SetMeasurementEventCallback<long>((_, measurement, _, _) => measurements.Add(measurement));
         meterListener.Start();

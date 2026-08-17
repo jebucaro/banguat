@@ -15,12 +15,12 @@ public class GetCurrencyRateHistorySinceTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrencyRateHistorySince.Handler(transport);
 
-        Result<GetCurrencyRateHistorySince.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrencyRateHistorySince.Query(new DateOnly(2026, 8, 17), new CurrencyCode(18)),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        GetCurrencyRateHistorySince.RatePoint point = Assert.Single(result.Value.Rates);
+        var point = Assert.Single(result.Value.Rates);
         Assert.Equal(17.0241m, point.Buy);
         Assert.Equal(17.0271m, point.Sell);
         Assert.Equal("TipoCambioFechaInicialMoneda", transport.LastOperationName);
@@ -40,7 +40,7 @@ public class GetCurrencyRateHistorySinceTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrencyRateHistorySince.Handler(transport);
 
-        Result<GetCurrencyRateHistorySince.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrencyRateHistorySince.Query(new DateOnly(2026, 8, 17), new CurrencyCode(18)),
             CancellationToken.None);
 
@@ -55,7 +55,7 @@ public class GetCurrencyRateHistorySinceTests
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
         var handler = new GetCurrencyRateHistorySince.Handler(transport);
 
-        Result<GetCurrencyRateHistorySince.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrencyRateHistorySince.Query(new DateOnly(2026, 8, 17), new CurrencyCode(18)),
             CancellationToken.None);
 

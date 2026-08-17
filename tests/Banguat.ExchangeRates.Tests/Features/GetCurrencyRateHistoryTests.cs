@@ -15,12 +15,12 @@ public class GetCurrencyRateHistoryTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrencyRateHistory.Handler(transport);
 
-        Result<GetCurrencyRateHistory.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrencyRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 3), new CurrencyCode(18)),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        GetCurrencyRateHistory.RatePoint point = Assert.Single(result.Value.Rates);
+        var point = Assert.Single(result.Value.Rates);
         Assert.Equal(17.2953m, point.Buy);
         Assert.Equal(17.2985m, point.Sell);
         Assert.Equal("TipoCambioRangoMoneda", transport.LastOperationName);
@@ -41,7 +41,7 @@ public class GetCurrencyRateHistoryTests
         var transport = new FakeBanguatSoapTransport(Result.Success(new XDocument()));
         var handler = new GetCurrencyRateHistory.Handler(transport);
 
-        Result<GetCurrencyRateHistory.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrencyRateHistory.Query(new DateOnly(2026, 8, 3), new DateOnly(2026, 8, 1), new CurrencyCode(18)),
             CancellationToken.None);
 
@@ -58,7 +58,7 @@ public class GetCurrencyRateHistoryTests
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetCurrencyRateHistory.Handler(transport);
 
-        Result<GetCurrencyRateHistory.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrencyRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 3), new CurrencyCode(18)),
             CancellationToken.None);
 
@@ -73,7 +73,7 @@ public class GetCurrencyRateHistoryTests
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
         var handler = new GetCurrencyRateHistory.Handler(transport);
 
-        Result<GetCurrencyRateHistory.Response> result = await handler.Handle(
+        var result = await handler.Handle(
             new GetCurrencyRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 3), new CurrencyCode(18)),
             CancellationToken.None);
 

@@ -3,7 +3,8 @@ using Banguat.ExchangeRates.Common.Messaging;
 
 namespace Banguat.ExchangeRates.Tests;
 
-internal sealed class RecordingQueryHandler<TQuery, TResponse>(Result<TResponse> response) : IQueryHandler<TQuery, TResponse>
+internal sealed class RecordingQueryHandler<TQuery, TResponse>(Result<TResponse> response)
+    : IQueryHandler<TQuery, TResponse>
     where TQuery : IQuery<TResponse>
 {
     public TQuery? LastQuery { get; private set; }

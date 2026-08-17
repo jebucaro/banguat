@@ -12,7 +12,7 @@ public class SoapVarTests
         var element = XElement.Parse(
             """<Var xmlns="http://www.banguat.gob.gt/variables/ws/"><moneda>2</moneda><fecha>17/08/2026</fecha><venta>7.62484</venta><compra>7.6188</compra></Var>""");
 
-        SoapVar? result = SoapVar.FromElement(element);
+        var result = SoapVar.FromElement(element);
 
         Assert.NotNull(result);
         Assert.Equal(new DateOnly(2026, 8, 17), result.Fecha);

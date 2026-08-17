@@ -27,7 +27,7 @@ public static class GetUsdRateHistorySince
                     BanguatSoapNamespaces.Service + "fechainit",
                     query.Since.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)));
 
-            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -39,17 +39,15 @@ public static class GetUsdRateHistorySince
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            XElement? resultElement = document
+            var resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "TipoCambioFechaInicialResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
-            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("TipoCambioFechaInicial"));
-            }
 
-            XElement? varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
-            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
+            var varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
+            var vars = SoapXmlParsing.ParseList(
                 varsContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
 
             var points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();

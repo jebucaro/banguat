@@ -28,7 +28,7 @@ public static class GetCurrencyRateHistorySince
                     query.Since.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)),
                 new XElement(BanguatSoapNamespaces.Service + "moneda", query.Currency.Value));
 
-            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -40,17 +40,15 @@ public static class GetCurrencyRateHistorySince
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            XElement? resultElement = document
+            var resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "TipoCambioFechaInicialMonedaResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
-            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("TipoCambioFechaInicialMoneda"));
-            }
 
-            XElement? varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
-            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
+            var varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
+            var vars = SoapXmlParsing.ParseList(
                 varsContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
 
             var points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();

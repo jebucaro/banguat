@@ -7,9 +7,11 @@ public interface IBanguatExchangeRateClient
 {
     Task<Result<GetCurrentUsdRate.Response>> GetCurrentUsdRateAsync(CancellationToken cancellationToken = default);
 
-    Task<Result<GetCurrentUsdRateText.Response>> GetCurrentUsdRateTextAsync(CancellationToken cancellationToken = default);
+    Task<Result<GetCurrentUsdRateText.Response>> GetCurrentUsdRateTextAsync(
+        CancellationToken cancellationToken = default);
 
-    Task<Result<GetAvailableCurrencies.Response>> GetAvailableCurrenciesAsync(CancellationToken cancellationToken = default);
+    Task<Result<GetAvailableCurrencies.Response>> GetAvailableCurrenciesAsync(
+        CancellationToken cancellationToken = default);
 
     Task<Result<GetCurrentRate.Response>> GetCurrentRateAsync(
         CurrencyCode currency, CancellationToken cancellationToken = default);

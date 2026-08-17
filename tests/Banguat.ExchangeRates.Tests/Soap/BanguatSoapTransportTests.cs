@@ -24,10 +24,11 @@ public class BanguatSoapTransportTests
 
         var operation = new XElement(BanguatSoapNamespaces.Service + "TipoCambioDia");
 
-        Result<XDocument> result = await transport.InvokeAsync("TipoCambioDia", operation);
+        var result = await transport.InvokeAsync("TipoCambioDia", operation);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value.Descendants(BanguatSoapNamespaces.Service + "TipoCambioDiaResult").FirstOrDefault());
+        Assert.NotNull(result.Value.Descendants(BanguatSoapNamespaces.Service + "TipoCambioDiaResult")
+            .FirstOrDefault());
         Assert.Equal(
             "http://www.banguat.gob.gt/variables/ws/TipoCambioDia",
             handler.LastRequest!.Headers.GetValues("SOAPAction").Single().Trim('"'));
@@ -49,7 +50,7 @@ public class BanguatSoapTransportTests
 
         var operation = new XElement(BanguatSoapNamespaces.Service + "TipoCambioRango");
 
-        Result<XDocument> result = await transport.InvokeAsync("TipoCambioRango", operation);
+        var result = await transport.InvokeAsync("TipoCambioRango", operation);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.SoapFault", result.Error.Code);
@@ -67,7 +68,7 @@ public class BanguatSoapTransportTests
 
         var operation = new XElement(BanguatSoapNamespaces.Service + "TipoCambioDia");
 
-        Result<XDocument> result = await transport.InvokeAsync("TipoCambioDia", operation);
+        var result = await transport.InvokeAsync("TipoCambioDia", operation);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);
@@ -86,7 +87,7 @@ public class BanguatSoapTransportTests
 
         var operation = new XElement(BanguatSoapNamespaces.Service + "TipoCambioDia");
 
-        Result<XDocument> result = await transport.InvokeAsync("TipoCambioDia", operation);
+        var result = await transport.InvokeAsync("TipoCambioDia", operation);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);

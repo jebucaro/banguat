@@ -7,7 +7,7 @@ public class BanguatErrorsTests
     [Fact]
     public void TransportFailure_Should_BeFailureType()
     {
-        Error error = BanguatErrors.TransportFailure("connection reset");
+        var error = BanguatErrors.TransportFailure("connection reset");
 
         Assert.Equal("Banguat.TransportFailure", error.Code);
         Assert.Equal(ErrorType.Failure, error.Type);
@@ -17,7 +17,7 @@ public class BanguatErrorsTests
     [Fact]
     public void SoapFault_Should_BeProblemType()
     {
-        Error error = BanguatErrors.SoapFault("soap:Server", "bad request");
+        var error = BanguatErrors.SoapFault("soap:Server", "bad request");
 
         Assert.Equal("Banguat.SoapFault", error.Code);
         Assert.Equal(ErrorType.Problem, error.Type);
@@ -28,7 +28,7 @@ public class BanguatErrorsTests
     [Fact]
     public void UnexpectedResponseShape_Should_BeProblemType()
     {
-        Error error = BanguatErrors.UnexpectedResponseShape("TipoCambioDia");
+        var error = BanguatErrors.UnexpectedResponseShape("TipoCambioDia");
 
         Assert.Equal("Banguat.UnexpectedResponseShape", error.Code);
         Assert.Equal(ErrorType.Problem, error.Type);
@@ -38,7 +38,7 @@ public class BanguatErrorsTests
     [Fact]
     public void InvalidDateRange_Should_BeValidationType()
     {
-        Error error = BanguatErrors.InvalidDateRange();
+        var error = BanguatErrors.InvalidDateRange();
 
         Assert.Equal("Banguat.InvalidDateRange", error.Code);
         Assert.Equal(ErrorType.Validation, error.Type);

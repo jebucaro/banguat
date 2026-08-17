@@ -16,8 +16,8 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
         ArgumentException.ThrowIfNullOrWhiteSpace(operationName);
         ArgumentNullException.ThrowIfNull(operation);
 
-        XDocument envelope = CreateEnvelope(operation);
-        string envelopeXml = envelope.Declaration + envelope.ToString(SaveOptions.DisableFormatting);
+        var envelope = CreateEnvelope(operation);
+        var envelopeXml = envelope.Declaration + envelope.ToString(SaveOptions.DisableFormatting);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, (Uri?)null)
         {
@@ -29,7 +29,7 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
         string body;
         try
         {
-            HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
+            var response = await httpClient.SendAsync(request, cancellationToken);
             body = await response.Content.ReadAsStringAsync(cancellationToken);
         }
         catch (HttpRequestException ex)
@@ -52,12 +52,12 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
                 BanguatErrors.TransportFailure($"Response body was not valid XML: {ex.Message}"));
         }
 
-        XElement? fault = document.Descendants(BanguatSoapNamespaces.Soap + "Fault").FirstOrDefault();
+        var fault = document.Descendants(BanguatSoapNamespaces.Soap + "Fault").FirstOrDefault();
         if (fault is not null)
         {
-            string faultCode = fault.Element("faultcode")?.Value ?? "Unknown";
-            string faultString = fault.Element("faultstring")?.Value
-                ?? "The service returned an unspecified SOAP fault.";
+            var faultCode = fault.Element("faultcode")?.Value ?? "Unknown";
+            var faultString = fault.Element("faultstring")?.Value
+                              ?? "The service returned an unspecified SOAP fault.";
             return Result.Failure<XDocument>(BanguatErrors.SoapFault(faultCode, faultString));
         }
 

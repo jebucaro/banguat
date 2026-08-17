@@ -29,7 +29,7 @@ public static class GetCurrentRate
                 BanguatSoapNamespaces.Service + OperationName,
                 new XElement(BanguatSoapNamespaces.Service + "variable", query.Currency.Value));
 
-            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -41,17 +41,15 @@ public static class GetCurrentRate
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            XElement? resultElement = document
+            var resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "VariablesResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
-            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("Variables"));
-            }
 
-            XElement? cambioDiaContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDia");
-            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
+            var cambioDiaContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDia");
+            var vars = SoapXmlParsing.ParseList(
                 cambioDiaContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
 
             if (vars.Count > 0)
@@ -60,8 +58,8 @@ public static class GetCurrentRate
                 return Result.Success(new Response(points));
             }
 
-            XElement? cambioDolarContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDolar");
-            IReadOnlyList<SoapVarDolar> varDolars = SoapXmlParsing.ParseList(
+            var cambioDolarContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDolar");
+            var varDolars = SoapXmlParsing.ParseList(
                 cambioDolarContainer, BanguatSoapNamespaces.Service + "VarDolar", SoapVarDolar.FromElement);
 
             if (varDolars.Count > 0)

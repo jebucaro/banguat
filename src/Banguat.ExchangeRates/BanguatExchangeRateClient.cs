@@ -15,32 +15,52 @@ public sealed class BanguatExchangeRateClient(
     IQueryHandler<GetCurrencyRateHistory.Query, GetCurrencyRateHistory.Response> getCurrencyRateHistory)
     : IBanguatExchangeRateClient
 {
-    public Task<Result<GetCurrentUsdRate.Response>> GetCurrentUsdRateAsync(CancellationToken cancellationToken = default) =>
-        getCurrentUsdRate.Handle(new GetCurrentUsdRate.Query(), cancellationToken);
+    public Task<Result<GetCurrentUsdRate.Response>> GetCurrentUsdRateAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return getCurrentUsdRate.Handle(new GetCurrentUsdRate.Query(), cancellationToken);
+    }
 
-    public Task<Result<GetCurrentUsdRateText.Response>> GetCurrentUsdRateTextAsync(CancellationToken cancellationToken = default) =>
-        getCurrentUsdRateText.Handle(new GetCurrentUsdRateText.Query(), cancellationToken);
+    public Task<Result<GetCurrentUsdRateText.Response>> GetCurrentUsdRateTextAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return getCurrentUsdRateText.Handle(new GetCurrentUsdRateText.Query(), cancellationToken);
+    }
 
-    public Task<Result<GetAvailableCurrencies.Response>> GetAvailableCurrenciesAsync(CancellationToken cancellationToken = default) =>
-        getAvailableCurrencies.Handle(new GetAvailableCurrencies.Query(), cancellationToken);
+    public Task<Result<GetAvailableCurrencies.Response>> GetAvailableCurrenciesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return getAvailableCurrencies.Handle(new GetAvailableCurrencies.Query(), cancellationToken);
+    }
 
     public Task<Result<GetCurrentRate.Response>> GetCurrentRateAsync(
-        CurrencyCode currency, CancellationToken cancellationToken = default) =>
-        getCurrentRate.Handle(new GetCurrentRate.Query(currency), cancellationToken);
+        CurrencyCode currency, CancellationToken cancellationToken = default)
+    {
+        return getCurrentRate.Handle(new GetCurrentRate.Query(currency), cancellationToken);
+    }
 
     public Task<Result<GetUsdRateHistorySince.Response>> GetUsdRateHistorySinceAsync(
-        DateOnly since, CancellationToken cancellationToken = default) =>
-        getUsdRateHistorySince.Handle(new GetUsdRateHistorySince.Query(since), cancellationToken);
+        DateOnly since, CancellationToken cancellationToken = default)
+    {
+        return getUsdRateHistorySince.Handle(new GetUsdRateHistorySince.Query(since), cancellationToken);
+    }
 
     public Task<Result<GetUsdRateHistory.Response>> GetUsdRateHistoryAsync(
-        DateOnly from, DateOnly to, CancellationToken cancellationToken = default) =>
-        getUsdRateHistory.Handle(new GetUsdRateHistory.Query(from, to), cancellationToken);
+        DateOnly from, DateOnly to, CancellationToken cancellationToken = default)
+    {
+        return getUsdRateHistory.Handle(new GetUsdRateHistory.Query(from, to), cancellationToken);
+    }
 
     public Task<Result<GetCurrencyRateHistorySince.Response>> GetCurrencyRateHistorySinceAsync(
-        DateOnly since, CurrencyCode currency, CancellationToken cancellationToken = default) =>
-        getCurrencyRateHistorySince.Handle(new GetCurrencyRateHistorySince.Query(since, currency), cancellationToken);
+        DateOnly since, CurrencyCode currency, CancellationToken cancellationToken = default)
+    {
+        return getCurrencyRateHistorySince.Handle(new GetCurrencyRateHistorySince.Query(since, currency),
+            cancellationToken);
+    }
 
     public Task<Result<GetCurrencyRateHistory.Response>> GetCurrencyRateHistoryAsync(
-        DateOnly from, DateOnly to, CurrencyCode currency, CancellationToken cancellationToken = default) =>
-        getCurrencyRateHistory.Handle(new GetCurrencyRateHistory.Query(from, to, currency), cancellationToken);
+        DateOnly from, DateOnly to, CurrencyCode currency, CancellationToken cancellationToken = default)
+    {
+        return getCurrencyRateHistory.Handle(new GetCurrencyRateHistory.Query(from, to, currency), cancellationToken);
+    }
 }
