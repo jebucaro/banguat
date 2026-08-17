@@ -11,7 +11,7 @@ public class GetUsdRateHistorySinceTests
     public async Task Handle_Should_ReturnRatePoints_OnSuccess()
     {
         var document = XDocument.Parse(
-            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioFechaInicialResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><TipoCambioFechaInicialResult><Vars><Var><moneda>2</moneda><fecha>16/08/2026</fecha><venta>7.6231</venta><compra>7.6231</compra></Var><Var><moneda>2</moneda><fecha>17/08/2026</fecha><venta>7.61992</venta><compra>7.61992</compra></Var></Vars><TotalItems>2</TotalItems></TipoCambioFechaInicialResult></TipoCambioFechaInicialResponse></soap:Body></soap:Envelope>""");
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioFechaInicialResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><TipoCambioFechaInicialResult><Vars><Var><moneda>2</moneda><fecha>16/08/2026</fecha><venta>7.6231</venta><compra>7.6231</compra></Var><Var><moneda>2</moneda><fecha>17/08/2026</fecha><venta>7.6350</venta><compra>7.6231</compra></Var></Vars><TotalItems>2</TotalItems></TipoCambioFechaInicialResult></TipoCambioFechaInicialResponse></soap:Body></soap:Envelope>""");
         var transport = new FakeBanguatSoapTransport(Result.Success(document));
         var handler = new GetUsdRateHistorySince.Handler(transport);
 
@@ -20,8 +20,12 @@ public class GetUsdRateHistorySinceTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.Rates.Count);
+        Assert.Equal(new DateOnly(2026, 8, 16), result.Value.Rates[0].Date);
+        Assert.Equal(7.6231m, result.Value.Rates[0].Buy);
+        Assert.Equal(7.6231m, result.Value.Rates[0].Sell);
         Assert.Equal(new DateOnly(2026, 8, 17), result.Value.Rates[1].Date);
-        Assert.Equal(7.61992m, result.Value.Rates[1].Buy);
+        Assert.Equal(7.6231m, result.Value.Rates[1].Buy);
+        Assert.Equal(7.6350m, result.Value.Rates[1].Sell);
         Assert.Equal("TipoCambioFechaInicial", transport.LastOperationName);
         Assert.Equal(
             "16/08/2026",
