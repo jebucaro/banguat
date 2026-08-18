@@ -1,4 +1,5 @@
 using Banguat.ExchangeRates;
+using Banguat.ExchangeRates.Cli.Aliases;
 using CliFx;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
@@ -14,6 +15,7 @@ public static class Program
 
         services.AddBanguatExchangeRates();
         services.AddSingleton(AnsiConsole.Console);
+        services.AddSingleton<ICurrencyOverrideSource, FileCurrencyOverrideSource>();
 
         services.Scan(scan => scan.FromAssembliesOf(typeof(Program))
             .AddClasses(classes => classes.AssignableTo<ICommand>())
