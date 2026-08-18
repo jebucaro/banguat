@@ -22,7 +22,7 @@ public sealed class FileCurrencyOverrideSource(string? filePath = null) : ICurre
         {
             json = File.ReadAllText(_filePath);
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             throw new CurrencyOverrideLoadException($"Failed to read {_filePath}: {ex.Message}");
         }
