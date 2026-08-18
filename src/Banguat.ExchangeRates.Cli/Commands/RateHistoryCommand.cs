@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Banguat.ExchangeRates;
+using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
 using CliFx;
 using CliFx.Binding;
@@ -14,8 +15,12 @@ internal sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 [Command("rate history",
     Description = "Show a currency's rate history, either from a date to today (--since) or over a bounded " +
                    "range (--from/--to). Defaults to USD (2) if --currency is omitted.")]
-public sealed partial class RateHistoryCommand(IBanguatExchangeRateClient client, IAnsiConsole console)
-    : BanguatCommandBase(console), ICommand
+public sealed partial class RateHistoryCommand(
+    IBanguatExchangeRateClient client,
+    IAnsiConsole console,
+    ICurrencyAliasCatalog aliasCatalog,
+    ICurrencyOverrideSource overrideSource)
+    : BanguatCommandBase(console, aliasCatalog, overrideSource), ICommand
 {
     [CommandOption("since", Description = "Start date, format yyyy-MM-dd. Mutually exclusive with --from/--to.")]
     public string? Since { get; set; }
@@ -26,8 +31,8 @@ public sealed partial class RateHistoryCommand(IBanguatExchangeRateClient client
     [CommandOption("to", Description = "End date, format yyyy-MM-dd. Requires --from.")]
     public string? To { get; set; }
 
-    [CommandOption("currency", Description = "Numeric currency code (see 'currencies'). Defaults to 2 (USD).")]
-    public int Currency { get; set; } = 2;
+    [CommandOption("currency", Description = "Currency code or alias (see 'currencies'). Defaults to 2 (USD).")]
+    public string Currency { get; set; } = "2";
 
     public async ValueTask ExecuteAsync(IConsole console)
     {
@@ -41,7 +46,18 @@ public sealed partial class RateHistoryCommand(IBanguatExchangeRateClient client
             return;
         }
 
-        CurrencyCode currency = new(Currency);
+        if (!TryResolveCurrency(Currency, mode, out CurrencyCode currency))
+        {
+            return;
+        }
+
+        if (!TryLoadOverrideMap(mode, out var overrides))
+        {
+            return;
+        }
+
+        string? currencyAlias = GetAliasesFor(currency, overrides).FirstOrDefault();
+
         IReadOnlyList<RatePoint> points;
 
         if (!string.IsNullOrWhiteSpace(Since))
@@ -78,7 +94,8 @@ public sealed partial class RateHistoryCommand(IBanguatExchangeRateClient client
         {
             Console.WriteLine(JsonSerializer.Serialize(new
             {
-                currency = Currency,
+                currency = currency.Value,
+                currencyAlias,
                 count = points.Count,
                 history = points.Select(p => new { date = p.Date, buy = p.Buy, sell = p.Sell })
             }, JsonOptions));
@@ -103,10 +120,12 @@ public sealed partial class RateHistoryCommand(IBanguatExchangeRateClient client
         Table table = new Table().Border(mode == OutputMode.Rich ? TableBorder.Rounded : TableBorder.None);
         table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Date[/]" : "date"));
         table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Currency[/]" : "currency"));
+        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Alias[/]" : "currencyAlias"));
         table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Buy[/]" : "buy"));
         table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Sell[/]" : "sell"));
 
-        string currencyText = Currency.ToString(CultureInfo.InvariantCulture);
+        string currencyText = currency.Value.ToString(CultureInfo.InvariantCulture);
+        string aliasText = currencyAlias ?? string.Empty;
 
         foreach (var point in points)
         {
@@ -119,12 +138,14 @@ public sealed partial class RateHistoryCommand(IBanguatExchangeRateClient client
                 table.AddRow(
                     new Markup($"[grey]{date}[/]"),
                     new Markup($"[yellow]{currencyText}[/]"),
+                    new Markup($"[grey]{Markup.Escape(aliasText)}[/]"),
                     new Markup($"[green]{buy}[/]"),
                     new Markup($"[green]{sell}[/]"));
             }
             else
             {
-                table.AddRow(new Text(date), new Text(currencyText), new Text(buy), new Text(sell));
+                table.AddRow(
+                    new Text(date), new Text(currencyText), new Text(aliasText), new Text(buy), new Text(sell));
             }
         }
 
