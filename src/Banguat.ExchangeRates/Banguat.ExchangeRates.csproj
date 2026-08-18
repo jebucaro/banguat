@@ -12,6 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <EmbeddedResource Include="Common/CurrencyAliases.json" />
+    </ItemGroup>
+
+    <ItemGroup>
         <InternalsVisibleTo Include="Banguat.ExchangeRates.Tests"/>
     </ItemGroup>
 
