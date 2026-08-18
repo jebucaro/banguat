@@ -76,7 +76,7 @@ public abstract class BanguatCommandBase(
 
         try
         {
-            _overrideMapCache = overrideSource.Load();
+            _overrideMapCache = new Dictionary<string, CurrencyCode>(overrideSource.Load(), StringComparer.OrdinalIgnoreCase);
             overrides = _overrideMapCache;
             return true;
         }
@@ -91,8 +91,9 @@ public abstract class BanguatCommandBase(
     protected IReadOnlyList<string> GetAliasesFor(CurrencyCode code, IReadOnlyDictionary<string, CurrencyCode> overrides)
     {
         IEnumerable<string> overrideAliases = overrides.Where(kvp => kvp.Value == code).Select(kvp => kvp.Key);
+        IEnumerable<string> bundledAliases = aliasCatalog.GetAliases(code).Where(alias => !overrides.ContainsKey(alias));
 
-        return overrideAliases.Concat(aliasCatalog.GetAliases(code))
+        return overrideAliases.Concat(bundledAliases)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
@@ -193,7 +194,7 @@ public abstract class BanguatCommandBase(
     {
         if (mode == OutputMode.Json)
         {
-            Console.WriteLine(JsonSerializer.Serialize(new { error = message }, JsonOptions));
+            System.Console.Out.WriteLine(JsonSerializer.Serialize(new { error = message }, JsonOptions));
         }
         else if (mode == OutputMode.Rich)
         {

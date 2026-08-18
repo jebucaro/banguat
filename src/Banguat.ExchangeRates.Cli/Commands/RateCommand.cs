@@ -49,7 +49,7 @@ public sealed partial class RateCommand(
         {
             if (mode == OutputMode.Json)
             {
-                Console.WriteLine(JsonSerializer.Serialize(
+                System.Console.Out.WriteLine(JsonSerializer.Serialize(
                     new { currency = currency.Value, currencyAlias, count = 0 }, JsonOptions));
                 return;
             }
@@ -72,7 +72,7 @@ public sealed partial class RateCommand(
 
         if (mode == OutputMode.Json)
         {
-            Console.WriteLine(JsonSerializer.Serialize(new
+            System.Console.Out.WriteLine(JsonSerializer.Serialize(new
             {
                 date = point.Date,
                 currency = currency.Value,

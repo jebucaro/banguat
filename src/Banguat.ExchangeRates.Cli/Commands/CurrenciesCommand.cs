@@ -19,8 +19,8 @@ public sealed partial class CurrenciesCommand(
 {
     private static readonly string[] Hints =
     [
-        "rate --currency <id>",
-        "rate history --since <date> --currency <id>"
+        "rate --currency <id|alias>",
+        "rate history --since <date> --currency <id|alias>"
     ];
 
     public async ValueTask ExecuteAsync(IConsole console)
@@ -30,19 +30,19 @@ public sealed partial class CurrenciesCommand(
             return;
         }
 
-        if (!TryUnwrap(await client.GetAvailableCurrenciesAsync(), mode, out var response))
+        if (!TryLoadOverrideMap(mode, out var overrides))
         {
             return;
         }
 
-        if (!TryLoadOverrideMap(mode, out var overrides))
+        if (!TryUnwrap(await client.GetAvailableCurrenciesAsync(), mode, out var response))
         {
             return;
         }
 
         if (mode == OutputMode.Json)
         {
-            Console.WriteLine(JsonSerializer.Serialize(new
+            System.Console.Out.WriteLine(JsonSerializer.Serialize(new
             {
                 count = response.Currencies.Count,
                 currencies = response.Currencies.Select(c =>

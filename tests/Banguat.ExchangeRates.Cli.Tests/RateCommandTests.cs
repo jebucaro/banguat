@@ -11,6 +11,7 @@ using Spectre.Console.Testing;
 
 namespace Banguat.ExchangeRates.Cli.Tests;
 
+[Collection("ConsoleOutRedirect")]
 public class RateCommandTests
 {
     private readonly IBanguatExchangeRateClient _client = Substitute.For<IBanguatExchangeRateClient>();
@@ -18,6 +19,27 @@ public class RateCommandTests
     private static GetCurrentRate.Response OnePoint(DateOnly date, decimal buy, decimal sell)
     {
         return new GetCurrentRate.Response([new GetCurrentRate.RatePoint(date, buy, sell)]);
+    }
+
+    /// <summary>
+    /// JSON-mode output is written via System.Console.Out (bypassing the injected IAnsiConsole/TestConsole
+    /// to avoid Spectre's console-width line wrapping), so JSON-mode assertions must capture real stdout.
+    /// </summary>
+    private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
+    {
+        TextWriter original = System.Console.Out;
+        StringWriter writer = new();
+        System.Console.SetOut(writer);
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            System.Console.SetOut(original);
+        }
+
+        return writer.ToString();
     }
 
     [Fact]
@@ -72,11 +94,11 @@ public class RateCommandTests
             Currency = "24", Output = "json"
         };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
-        Assert.Contains("\"currency\": 24", testConsole.Output);
-        Assert.Contains("\"buy\": 1.1596", testConsole.Output);
-        Assert.Contains("\"help\"", testConsole.Output);
+        Assert.Contains("\"currency\": 24", stdOut);
+        Assert.Contains("\"buy\": 1.1596", stdOut);
+        Assert.Contains("\"help\"", stdOut);
     }
 
     [Fact]
@@ -120,10 +142,10 @@ public class RateCommandTests
             Currency = "24", Output = "json"
         };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
-        Assert.Contains("\"currency\": 24", testConsole.Output);
-        Assert.Contains("\"count\": 0", testConsole.Output);
+        Assert.Contains("\"currency\": 24", stdOut);
+        Assert.Contains("\"count\": 0", stdOut);
     }
 
     [Fact]
@@ -173,11 +195,11 @@ public class RateCommandTests
             Currency = "USD", Output = "json"
         };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
         await _client.Received(1).GetCurrentRateAsync(usd);
-        Assert.Contains("\"currency\": 2", testConsole.Output);
-        Assert.Contains("\"currencyAlias\": \"USD\"", testConsole.Output);
+        Assert.Contains("\"currency\": 2", stdOut);
+        Assert.Contains("\"currencyAlias\": \"USD\"", stdOut);
     }
 
     [Fact]
@@ -192,9 +214,9 @@ public class RateCommandTests
             Currency = "2", Output = "json"
         };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
-        Assert.Contains("\"currencyAlias\": \"USD\"", testConsole.Output);
+        Assert.Contains("\"currencyAlias\": \"USD\"", stdOut);
     }
 
     [Fact]
@@ -211,6 +233,27 @@ public class RateCommandTests
         await _client.DidNotReceive().GetCurrentRateAsync(Arg.Any<CurrencyCode>());
         Assert.Contains("Unknown currency 'USSD'", testConsole.Output);
         Assert.Contains("USD", testConsole.Output);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenOverrideIsCaseSensitiveDictionary_LowercaseAliasStillResolves()
+    {
+        CurrencyCode eur = new(24);
+        _client.GetCurrentRateAsync(eur).Returns(
+            Result.Success(OnePoint(new DateOnly(2026, 8, 18), 10.5m, 10.6m)));
+        TestConsole testConsole = new TestConsole().Width(200);
+        var caseSensitiveOverrides = new Dictionary<string, CurrencyCode> { ["EUR"] = new(24) };
+        RateCommand command = new(
+            _client, testConsole, new BundledCurrencyAliasCatalog(),
+            new StubCurrencyOverrideSource(caseSensitiveOverrides))
+        {
+            Currency = "eur", Output = "json"
+        };
+
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
+
+        await _client.Received(1).GetCurrentRateAsync(eur);
+        Assert.Contains("\"currency\": 24", stdOut);
     }
 
     [Fact]

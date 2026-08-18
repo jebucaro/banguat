@@ -10,6 +10,7 @@ using Spectre.Console.Testing;
 
 namespace Banguat.ExchangeRates.Cli.Tests;
 
+[Collection("ConsoleOutRedirect")]
 public class CurrenciesCommandTests
 {
     private readonly IBanguatExchangeRateClient _client = Substitute.For<IBanguatExchangeRateClient>();
@@ -18,6 +19,27 @@ public class CurrenciesCommandTests
     {
         return new GetAvailableCurrencies.Response(
             [new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(24), "Euro")]);
+    }
+
+    /// <summary>
+    /// JSON-mode output is written via System.Console.Out (bypassing the injected IAnsiConsole/TestConsole
+    /// to avoid Spectre's console-width line wrapping), so JSON-mode assertions must capture real stdout.
+    /// </summary>
+    private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
+    {
+        TextWriter original = System.Console.Out;
+        StringWriter writer = new();
+        System.Console.SetOut(writer);
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            System.Console.SetOut(original);
+        }
+
+        return writer.ToString();
     }
 
     [Fact]
@@ -39,8 +61,8 @@ public class CurrenciesCommandTests
         Assert.Contains("24", testConsole.Output);
         Assert.Contains("Euro", testConsole.Output);
         Assert.Contains("# count: 1", testConsole.Output);
-        Assert.Contains("# hint: rate --currency <id>", testConsole.Output);
-        Assert.Contains("# hint: rate history --since <date> --currency <id>", testConsole.Output);
+        Assert.Contains("# hint: rate --currency <id|alias>", testConsole.Output);
+        Assert.Contains("# hint: rate history --since <date> --currency <id|alias>", testConsole.Output);
     }
 
     [Fact]
@@ -60,7 +82,7 @@ public class CurrenciesCommandTests
         Assert.Contains("Euro", testConsole.Output);
         Assert.Contains("Showing 1 currencies", testConsole.Output);
         Assert.Contains("Next steps", testConsole.Output);
-        Assert.Contains("rate --currency <id>", testConsole.Output);
+        Assert.Contains("rate --currency <id|alias>", testConsole.Output);
     }
 
     [Fact]
@@ -74,13 +96,13 @@ public class CurrenciesCommandTests
                 Output = "json"
             };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
-        Assert.Contains("\"count\": 1", testConsole.Output);
-        Assert.Contains("\"code\": 24", testConsole.Output);
-        Assert.Contains("\"description\": \"Euro\"", testConsole.Output);
-        Assert.Contains("\"help\"", testConsole.Output);
-        Assert.Contains("rate --currency <id>", testConsole.Output);
+        Assert.Contains("\"count\": 1", stdOut);
+        Assert.Contains("\"code\": 24", stdOut);
+        Assert.Contains("\"description\": \"Euro\"", stdOut);
+        Assert.Contains("\"help\"", stdOut);
+        Assert.Contains("rate --currency <id|alias>", stdOut);
     }
 
     [Fact]
@@ -148,10 +170,10 @@ public class CurrenciesCommandTests
                 Output = "json"
             };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
-        Assert.Contains("\"alias\": \"GTQ\"", testConsole.Output);
-        Assert.Contains("\"alias\": \"USD\"", testConsole.Output);
+        Assert.Contains("\"alias\": \"GTQ\"", stdOut);
+        Assert.Contains("\"alias\": \"USD\"", stdOut);
     }
 
     [Fact]

@@ -11,9 +11,31 @@ using Spectre.Console.Testing;
 
 namespace Banguat.ExchangeRates.Cli.Tests;
 
+[Collection("ConsoleOutRedirect")]
 public class RateHistoryCommandTests
 {
     private readonly IBanguatExchangeRateClient _client = Substitute.For<IBanguatExchangeRateClient>();
+
+    /// <summary>
+    /// JSON-mode output is written via System.Console.Out (bypassing the injected IAnsiConsole/TestConsole
+    /// to avoid Spectre's console-width line wrapping), so JSON-mode assertions must capture real stdout.
+    /// </summary>
+    private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
+    {
+        TextWriter original = System.Console.Out;
+        StringWriter writer = new();
+        System.Console.SetOut(writer);
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            System.Console.SetOut(original);
+        }
+
+        return writer.ToString();
+    }
 
     [Fact]
     public async Task ExecuteAsync_WithSince_PlainMode_RendersHistoryTableAndCount()
@@ -96,11 +118,11 @@ public class RateHistoryCommandTests
                 Since = "2026-08-01", Currency = "24", Output = "json"
             };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
-        Assert.Contains("\"currency\": 24", testConsole.Output);
-        Assert.Contains("\"count\": 1", testConsole.Output);
-        Assert.DoesNotContain("\"help\"", testConsole.Output);
+        Assert.Contains("\"currency\": 24", stdOut);
+        Assert.Contains("\"count\": 1", stdOut);
+        Assert.DoesNotContain("\"help\"", stdOut);
     }
 
     [Fact]
@@ -237,11 +259,11 @@ public class RateHistoryCommandTests
                 Since = "2026-08-01", Currency = "USD", Output = "json"
             };
 
-        await command.ExecuteAsync(new FakeInMemoryConsole());
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
         await _client.Received(1).GetCurrencyRateHistorySinceAsync(since, usd);
-        Assert.Contains("\"currency\": 2", testConsole.Output);
-        Assert.Contains("\"currencyAlias\": \"USD\"", testConsole.Output);
+        Assert.Contains("\"currency\": 2", stdOut);
+        Assert.Contains("\"currencyAlias\": \"USD\"", stdOut);
     }
 
     [Fact]

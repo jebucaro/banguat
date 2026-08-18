@@ -92,7 +92,7 @@ public sealed partial class RateHistoryCommand(
 
         if (mode == OutputMode.Json)
         {
-            Console.WriteLine(JsonSerializer.Serialize(new
+            System.Console.Out.WriteLine(JsonSerializer.Serialize(new
             {
                 currency = currency.Value,
                 currencyAlias,
