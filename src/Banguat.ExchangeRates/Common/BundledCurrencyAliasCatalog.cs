@@ -38,7 +38,7 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
     public bool TryResolve(string alias, out CurrencyCode code) => _aliasToCode.TryGetValue(alias, out code);
 
     public IReadOnlyList<string> GetAliases(CurrencyCode code) =>
-        _codeToAliases.TryGetValue(code, out List<string>? aliases) ? aliases : [];
+        _codeToAliases.TryGetValue(code, out List<string>? aliases) ? aliases.AsReadOnly() : [];
 
     public IReadOnlyList<string> AllAliases => _aliasToCode.Keys.ToList();
 }
