@@ -177,6 +177,33 @@ public abstract class BanguatCommandBase(
         return distances[a.Length, b.Length];
     }
 
+    protected void WriteNextSteps(IReadOnlyList<string> hints, OutputMode mode)
+    {
+        if (hints.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine();
+
+        if (mode == OutputMode.Rich)
+        {
+            Console.MarkupLine("[bold]Next steps:[/]");
+            foreach (string hint in hints)
+            {
+                Console.MarkupLine($"  → {Markup.Escape(hint)}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Next steps:");
+            foreach (string hint in hints)
+            {
+                Console.WriteLine($"  → {hint}");
+            }
+        }
+    }
+
     protected bool TryUnwrap<T>(Result<T> result, OutputMode mode, out T value)
     {
         if (result.IsFailure)

@@ -60,7 +60,8 @@ public class RateCommandTests
         Assert.Contains("2026-08-18", testConsole.Output);
         Assert.Contains("24", testConsole.Output);
         Assert.Contains(1.1596m.ToString(CultureInfo.InvariantCulture), testConsole.Output);
-        Assert.Contains("# hint: rate history --since <date> --currency 24", testConsole.Output);
+        Assert.Contains("Next steps:", testConsole.Output);
+        Assert.Contains("→ rate history --since <date> --currency 24", testConsole.Output);
     }
 
     [Fact]

@@ -61,8 +61,9 @@ public class CurrenciesCommandTests
         Assert.Contains("24", testConsole.Output);
         Assert.Contains("Euro", testConsole.Output);
         Assert.Contains("# count: 1", testConsole.Output);
-        Assert.Contains("# hint: rate --currency <id|alias>", testConsole.Output);
-        Assert.Contains("# hint: rate history --since <date> --currency <id|alias>", testConsole.Output);
+        Assert.Contains("Next steps:", testConsole.Output);
+        Assert.Contains("→ rate --currency <id|alias>", testConsole.Output);
+        Assert.Contains("→ rate history --since <date> --currency <id|alias>", testConsole.Output);
     }
 
     [Fact]

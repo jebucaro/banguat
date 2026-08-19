@@ -89,15 +89,12 @@ public sealed partial class CurrenciesCommand(
         if (mode == OutputMode.Rich)
         {
             Console.MarkupLine($"[grey]Showing {response.Currencies.Count} currencies[/]");
-            Console.Write(new Panel(string.Join('\n', Hints.Select(Markup.Escape))).Header("Next steps"));
         }
         else
         {
             Console.WriteLine($"# count: {response.Currencies.Count}");
-            foreach (string hint in Hints)
-            {
-                Console.WriteLine($"# hint: {hint}");
-            }
         }
+
+        WriteNextSteps(Hints, mode);
     }
 }

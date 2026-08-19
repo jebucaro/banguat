@@ -113,13 +113,6 @@ public sealed partial class RateCommand(
 
         Console.Write(table);
 
-        if (mode == OutputMode.Rich)
-        {
-            Console.Write(new Panel(Markup.Escape(hint)).Header("Next steps"));
-        }
-        else
-        {
-            Console.WriteLine($"# hint: {hint}");
-        }
+        WriteNextSteps([hint], mode);
     }
 }
