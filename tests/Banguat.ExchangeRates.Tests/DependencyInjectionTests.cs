@@ -1,3 +1,4 @@
+using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
 using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Features;
@@ -47,5 +48,18 @@ public class DependencyInjectionTests
         var handler = provider.GetRequiredService<IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>();
 
         Assert.IsType<TracingDecorator.QueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>(handler);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_Should_ResolveCurrencyAliasCatalog()
+    {
+        var services = new ServiceCollection();
+        services.AddBanguatExchangeRates();
+
+        using var provider = services.BuildServiceProvider();
+
+        var catalog = provider.GetRequiredService<ICurrencyAliasCatalog>();
+
+        Assert.NotNull(catalog);
     }
 }
