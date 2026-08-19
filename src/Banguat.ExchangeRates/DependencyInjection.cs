@@ -1,3 +1,4 @@
+using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
 using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Soap;
@@ -30,6 +31,8 @@ public static class DependencyInjection
         services.Decorate(typeof(IQueryHandler<,>), typeof(TracingDecorator.QueryHandler<,>));
 
         services.AddScoped<IBanguatExchangeRateClient, BanguatExchangeRateClient>();
+
+        services.AddSingleton<ICurrencyAliasCatalog, BundledCurrencyAliasCatalog>();
 
         return services;
     }
