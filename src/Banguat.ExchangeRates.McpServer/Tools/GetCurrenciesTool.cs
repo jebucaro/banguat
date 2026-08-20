@@ -14,7 +14,7 @@ public sealed class GetCurrenciesTool(IBanguatExchangeRateClient client, ICurren
 
     [McpServerTool(Name = "get_currencies")]
     [Description("Lists the currencies available from the Banguat exchange rate service, with their numeric codes and known aliases.")]
-    public async Task<CurrenciesResult> GetCurrenciesAsync(CancellationToken cancellationToken)
+    public async Task<CurrenciesResult> GetCurrenciesAsync(CancellationToken cancellationToken = default)
     {
         var result = await client.GetAvailableCurrenciesAsync(cancellationToken);
         if (result.IsFailure)

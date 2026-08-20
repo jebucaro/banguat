@@ -1,4 +1,5 @@
 using Banguat.ExchangeRates;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.McpServer.Tools;
 using ModelContextProtocol.AspNetCore;
 using OpenTelemetry;
@@ -31,11 +32,16 @@ builder.Services.AddMcpServer()
     .WithTools<GetRateHistoryTool>();
 
 // ServiceDefaults.ConfigureOpenTelemetry only listens on a source named after this app; the MCP SDK's
-// own instrumentation lives under "Experimental.ModelContextProtocol" and needs to be added explicitly
-// for its spans/metrics to reach the Aspire dashboard.
+// own instrumentation lives under "Experimental.ModelContextProtocol"; and the exchange-rate library's
+// domain-level spans/metrics live under BanguatExchangeRatesDiagnostics's names — both need to be added
+// explicitly for their spans/metrics to reach the Aspire dashboard.
 builder.Services.AddOpenTelemetry()
-    .WithTracing(t => t.AddSource("Experimental.ModelContextProtocol"))
-    .WithMetrics(m => m.AddMeter("Experimental.ModelContextProtocol"));
+    .WithTracing(t => t
+        .AddSource("Experimental.ModelContextProtocol")
+        .AddSource(BanguatExchangeRatesDiagnostics.ActivitySourceName))
+    .WithMetrics(m => m
+        .AddMeter("Experimental.ModelContextProtocol")
+        .AddMeter(BanguatExchangeRatesDiagnostics.MeterName));
 
 var app = builder.Build();
 

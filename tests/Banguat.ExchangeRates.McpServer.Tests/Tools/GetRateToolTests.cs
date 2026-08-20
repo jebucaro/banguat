@@ -27,6 +27,7 @@ public class GetRateToolTests
         Assert.Equal(1, result.Count);
         Assert.Equal(7.62157m, result.Buy);
         Assert.Equal(new DateOnly(2026, 8, 18), result.Date);
+        Assert.Equal("USD", result.CurrencyAlias);
     }
 
     [Fact]

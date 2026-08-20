@@ -28,6 +28,7 @@ public class GetRateHistoryToolTests
         Assert.Equal(1, result.Count);
         Assert.Equal(24, result.Currency);
         Assert.Equal(new DateOnly(2026, 8, 1), result.History[0].Date);
+        Assert.Equal("EUR", result.CurrencyAlias);
     }
 
     [Fact]
@@ -47,6 +48,21 @@ public class GetRateHistoryToolTests
     }
 
     [Fact]
+    public async Task GetRateHistoryAsync_FromAndTo_EmptyRange_ReturnsEmptyResult()
+    {
+        CurrencyCode eur = new(24);
+        _client.GetCurrencyRateHistoryAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2), eur, Arg.Any<CancellationToken>())
+            .Returns(Result.Success(new GetCurrencyRateHistory.Response([])));
+        GetRateHistoryTool tool = new(_client, _aliasCatalog);
+
+        GetRateHistoryTool.RateHistoryResult result = await tool.GetRateHistoryAsync(
+            "24", since: null, from: "2026-08-01", to: "2026-08-02", cancellationToken: CancellationToken.None);
+
+        Assert.Equal(0, result.Count);
+        Assert.Empty(result.History);
+    }
+
+    [Fact]
     public async Task GetRateHistoryAsync_NeitherSinceNorRange_ThrowsMcpException()
     {
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
@@ -62,6 +78,15 @@ public class GetRateHistoryToolTests
 
         await Assert.ThrowsAsync<McpException>(() => tool.GetRateHistoryAsync(
             "usd", since: "2026-08-01", from: "2026-08-01", to: "2026-08-02", cancellationToken: CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetRateHistoryAsync_PartialRange_ThrowsMcpException()
+    {
+        GetRateHistoryTool tool = new(_client, _aliasCatalog);
+
+        await Assert.ThrowsAsync<McpException>(() => tool.GetRateHistoryAsync(
+            "usd", since: null, from: "2026-08-01", to: null, cancellationToken: CancellationToken.None));
     }
 
     [Fact]
