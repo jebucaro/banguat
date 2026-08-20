@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
@@ -21,6 +22,9 @@ public static class GetUsdRateHistory
 
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
+            Activity.Current?.SetTag("banguat.date.from", query.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            Activity.Current?.SetTag("banguat.date.to", query.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
             if (query.To < query.From) return Result.Failure<Response>(BanguatErrors.InvalidDateRange());
 
             var request = new XElement(

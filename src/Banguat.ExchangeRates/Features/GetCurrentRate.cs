@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
@@ -25,6 +26,8 @@ public static class GetCurrentRate
 
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
+            Activity.Current?.SetTag("banguat.currency", query.Currency.Value);
+
             var request = new XElement(
                 BanguatSoapNamespaces.Service + OperationName,
                 new XElement(BanguatSoapNamespaces.Service + "variable", query.Currency.Value));
