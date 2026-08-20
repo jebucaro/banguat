@@ -1,10 +1,12 @@
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
+using Banguat.ExchangeRates.Tests.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Banguat.ExchangeRates.Tests;
 
 [Trait("Category", "Integration")]
+[Collection(ActivityListenerCollection.Name)]
 public class GetCurrentUsdRateIntegrationTests
 {
     [Fact]

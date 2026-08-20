@@ -1,7 +1,11 @@
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Cli.Aliases;
+using Banguat.ExchangeRates.Diagnostics;
 using CliFx;
 using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Scrutor;
 using Spectre.Console;
 
@@ -22,7 +26,29 @@ public static class Program
             .AsSelf()
             .WithTransientLifetime());
 
+        // Opt-in only: tracing/metrics from Banguat.ExchangeRates are exported over OTLP only when
+        // OTEL_EXPORTER_OTLP_ENDPOINT is set (e.g. pointed at the Aspire dashboard), mirroring
+        // ServiceDefaults' AddOpenTelemetryExporters gating. The CLI never requires Aspire to run.
+        var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            services.AddOpenTelemetry()
+                .ConfigureResource(resource => resource.AddService("banguat-exchangerates-cli"))
+                .WithTracing(tracing => tracing
+                    .AddSource(BanguatExchangeRatesDiagnostics.ActivitySourceName)
+                    .AddOtlpExporter())
+                .WithMetrics(metrics => metrics
+                    .AddMeter(BanguatExchangeRatesDiagnostics.MeterName)
+                    .AddOtlpExporter());
+        }
+
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
+
+        // Force the OTel SDK to start now (it's normally started by a generic-host hosted service,
+        // which this CLI doesn't use); no-op when the block above didn't run. Disposing
+        // serviceProvider below flushes the OTLP batch exporter before the process exits.
+        serviceProvider.GetService<TracerProvider>();
+        serviceProvider.GetService<MeterProvider>();
 
         CommandLineApplication app = new CommandLineApplicationBuilder()
             .AddCommandsFromThisAssembly()

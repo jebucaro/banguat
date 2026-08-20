@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Banguat.ExchangeRates.Tests.Diagnostics;
 
+[Collection(ActivityListenerCollection.Name)]
 public class TracingDecoratorTests
 {
     private static class Probe

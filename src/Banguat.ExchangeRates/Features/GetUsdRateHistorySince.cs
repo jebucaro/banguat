@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
@@ -21,6 +22,8 @@ public static class GetUsdRateHistorySince
 
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
+            Activity.Current?.SetTag("banguat.date.since", query.Since.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
             var request = new XElement(
                 BanguatSoapNamespaces.Service + OperationName,
                 new XElement(

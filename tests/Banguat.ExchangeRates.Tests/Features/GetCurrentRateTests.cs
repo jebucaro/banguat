@@ -1,10 +1,14 @@
+using System.Diagnostics;
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Features;
 using Banguat.ExchangeRates.Soap;
+using Banguat.ExchangeRates.Tests.Diagnostics;
 
 namespace Banguat.ExchangeRates.Tests.Features;
 
+[Collection(ActivityListenerCollection.Name)]
 public class GetCurrentRateTests
 {
     [Fact]
@@ -72,5 +76,27 @@ public class GetCurrentRateTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Handle_Should_TagCurrentActivityWithCurrency()
+    {
+        var document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesResult><CambioDia /><TotalItems>0</TotalItems></VariablesResult></VariablesResponse></soap:Body></soap:Envelope>""");
+        var transport = new FakeBanguatSoapTransport(Result.Success(document));
+        var handler = new GetCurrentRate.Handler(transport);
+
+        using var activitySource = new ActivitySource(BanguatExchangeRatesDiagnostics.ActivitySourceName);
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == BanguatExchangeRatesDiagnostics.ActivitySourceName,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData
+        };
+        ActivitySource.AddActivityListener(listener);
+
+        using var activity = activitySource.StartActivity("Probe");
+        await handler.Handle(new GetCurrentRate.Query(new CurrencyCode(18)), CancellationToken.None);
+
+        Assert.Equal(18, activity!.GetTagItem("banguat.currency"));
     }
 }
