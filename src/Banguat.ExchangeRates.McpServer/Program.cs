@@ -26,7 +26,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddMcpServer()
     .WithHttpTransport(o => o.SessionMode = HttpServerSessionMode.Stateless)
-    .WithTools<GetCurrenciesTool>();
+    .WithTools<GetCurrenciesTool>()
+    .WithTools<GetRateTool>();
 
 // ServiceDefaults.ConfigureOpenTelemetry only listens on a source named after this app; the MCP SDK's
 // own instrumentation lives under "Experimental.ModelContextProtocol" and needs to be added explicitly
