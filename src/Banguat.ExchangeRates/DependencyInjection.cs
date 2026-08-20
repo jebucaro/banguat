@@ -13,7 +13,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         Action<BanguatExchangeRateClientOptions>? configure = null)
     {
-        var options = new BanguatExchangeRateClientOptions();
+        BanguatExchangeRateClientOptions options = new();
         configure?.Invoke(options);
 
         services.AddHttpClient<IBanguatSoapTransport, BanguatSoapTransport>(http =>

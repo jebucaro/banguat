@@ -7,8 +7,8 @@ public class CurrencyCodeTests
     [Fact]
     public void Equals_Should_BeTrueForSameValue()
     {
-        var a = new CurrencyCode(2);
-        var b = new CurrencyCode(2);
+        CurrencyCode a = new(2);
+        CurrencyCode b = new(2);
 
         Assert.Equal(a, b);
     }
@@ -16,8 +16,8 @@ public class CurrencyCodeTests
     [Fact]
     public void Equals_Should_BeFalseForDifferentValue()
     {
-        var a = new CurrencyCode(2);
-        var b = new CurrencyCode(3);
+        CurrencyCode a = new(2);
+        CurrencyCode b = new(3);
 
         Assert.NotEqual(a, b);
     }
@@ -25,7 +25,7 @@ public class CurrencyCodeTests
     [Fact]
     public void ToString_Should_ReturnUnderlyingValue()
     {
-        var code = new CurrencyCode(2);
+        CurrencyCode code = new(2);
 
         Assert.Equal("2", code.ToString());
     }

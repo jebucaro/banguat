@@ -22,16 +22,16 @@ public class RateHistoryCommandTests
     /// </summary>
     private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
     {
-        TextWriter original = System.Console.Out;
+        TextWriter original = Console.Out;
         StringWriter writer = new();
-        System.Console.SetOut(writer);
+        Console.SetOut(writer);
         try
         {
             await action();
         }
         finally
         {
-            System.Console.SetOut(original);
+            Console.SetOut(original);
         }
 
         return writer.ToString();

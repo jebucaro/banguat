@@ -2,6 +2,7 @@ using System.Text.Json;
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Features;
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
@@ -30,12 +31,12 @@ public sealed partial class CurrenciesCommand(
             return;
         }
 
-        if (!TryLoadOverrideMap(mode, out var overrides))
+        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
         {
             return;
         }
 
-        if (!TryUnwrap(await client.GetAvailableCurrenciesAsync(), mode, out var response))
+        if (!TryUnwrap(await client.GetAvailableCurrenciesAsync(), mode, out GetAvailableCurrencies.Response response))
         {
             return;
         }
@@ -67,7 +68,7 @@ public sealed partial class CurrenciesCommand(
         table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Description[/]" : "description"));
         table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Alias[/]" : "alias"));
 
-        foreach (var entry in response.Currencies)
+        foreach (GetAvailableCurrencies.CurrencyCatalogEntry entry in response.Currencies)
         {
             string aliasText = string.Join(", ", GetAliasesFor(entry.Code, overrides));
 

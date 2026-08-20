@@ -9,7 +9,7 @@ public class SoapXmlParsingTests
     [Fact]
     public void ParseDate_Should_ParseValidDdMmYyyy()
     {
-        var result = SoapXmlParsing.ParseDate("17/08/2026");
+        DateOnly? result = SoapXmlParsing.ParseDate("17/08/2026");
 
         Assert.Equal(new DateOnly(2026, 8, 17), result);
     }
@@ -26,7 +26,7 @@ public class SoapXmlParsingTests
     [Fact]
     public void ParseDecimal_Should_ParseInvariantCultureValue()
     {
-        var result = SoapXmlParsing.ParseDecimal("7.61992");
+        decimal? result = SoapXmlParsing.ParseDecimal("7.61992");
 
         Assert.Equal(7.61992m, result);
     }
@@ -52,7 +52,7 @@ public class SoapXmlParsingTests
     [Fact]
     public void ParseList_Should_ReturnEmptyWhenContainerIsNull()
     {
-        var result = SoapXmlParsing.ParseList<string>(
+        IReadOnlyList<string> result = SoapXmlParsing.ParseList<string>(
             null, BanguatSoapNamespaces.Service + "Item", _ => "x");
 
         Assert.Empty(result);
@@ -61,16 +61,16 @@ public class SoapXmlParsingTests
     [Fact]
     public void ParseList_Should_MapEachItemAndSkipNulls()
     {
-        var container = new XElement(
+        XElement container = new(
             BanguatSoapNamespaces.Service + "Container",
             new XElement(BanguatSoapNamespaces.Service + "Item", "1"),
             new XElement(BanguatSoapNamespaces.Service + "Item", "skip"),
             new XElement(BanguatSoapNamespaces.Service + "Item", "3"));
 
-        var result = SoapXmlParsing.ParseList<int?>(
+        IReadOnlyList<int?> result = SoapXmlParsing.ParseList<int?>(
             container,
             BanguatSoapNamespaces.Service + "Item",
-            element => int.TryParse(element.Value, out var value) ? (int?)value : null);
+            element => int.TryParse(element.Value, out int value) ? (int?)value : null);
 
         Assert.Equal([1, 3], result);
     }

@@ -9,10 +9,16 @@ internal sealed class StubCurrencyOverrideSource(IReadOnlyDictionary<string, Cur
     private readonly IReadOnlyDictionary<string, CurrencyCode> _overrides =
         overrides ?? new Dictionary<string, CurrencyCode>();
 
-    public IReadOnlyDictionary<string, CurrencyCode> Load() => _overrides;
+    public IReadOnlyDictionary<string, CurrencyCode> Load()
+    {
+        return _overrides;
+    }
 }
 
 internal sealed class ThrowingCurrencyOverrideSource(string message) : ICurrencyOverrideSource
 {
-    public IReadOnlyDictionary<string, CurrencyCode> Load() => throw new CurrencyOverrideLoadException(message);
+    public IReadOnlyDictionary<string, CurrencyCode> Load()
+    {
+        throw new CurrencyOverrideLoadException(message);
+    }
 }

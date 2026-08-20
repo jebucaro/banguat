@@ -3,6 +3,7 @@ using System.Text.Json;
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Features;
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
@@ -14,7 +15,7 @@ internal sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 
 [Command("rate history",
     Description = "Show a currency's rate history, either from a date to today (--since) or over a bounded " +
-                   "range (--from/--to). Defaults to USD (2) if --currency is omitted.")]
+                  "range (--from/--to). Defaults to USD (2) if --currency is omitted.")]
 public sealed partial class RateHistoryCommand(
     IBanguatExchangeRateClient client,
     IAnsiConsole console,
@@ -51,7 +52,7 @@ public sealed partial class RateHistoryCommand(
             return;
         }
 
-        if (!TryLoadOverrideMap(mode, out var overrides))
+        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
         {
             return;
         }
@@ -67,7 +68,8 @@ public sealed partial class RateHistoryCommand(
                 return;
             }
 
-            if (!TryUnwrap(await client.GetCurrencyRateHistorySinceAsync(since, currency), mode, out var response))
+            if (!TryUnwrap(await client.GetCurrencyRateHistorySinceAsync(since, currency), mode,
+                    out GetCurrencyRateHistorySince.Response response))
             {
                 return;
             }
@@ -82,7 +84,8 @@ public sealed partial class RateHistoryCommand(
                 return;
             }
 
-            if (!TryUnwrap(await client.GetCurrencyRateHistoryAsync(from, to, currency), mode, out var response))
+            if (!TryUnwrap(await client.GetCurrencyRateHistoryAsync(from, to, currency), mode,
+                    out GetCurrencyRateHistory.Response response))
             {
                 return;
             }
@@ -92,13 +95,14 @@ public sealed partial class RateHistoryCommand(
 
         if (mode == OutputMode.Json)
         {
-            System.Console.Out.WriteLine(JsonSerializer.Serialize(new
-            {
-                currency = currency.Value,
-                currencyAlias,
-                count = points.Count,
-                history = points.Select(p => new { date = p.Date, buy = p.Buy, sell = p.Sell })
-            }, JsonOptions));
+            System.Console.Out.WriteLine(JsonSerializer.Serialize(
+                new
+                {
+                    currency = currency.Value,
+                    currencyAlias,
+                    count = points.Count,
+                    history = points.Select(p => new { date = p.Date, buy = p.Buy, sell = p.Sell })
+                }, JsonOptions));
             return;
         }
 
@@ -127,7 +131,7 @@ public sealed partial class RateHistoryCommand(
         string currencyText = currency.Value.ToString(CultureInfo.InvariantCulture);
         string aliasText = currencyAlias ?? string.Empty;
 
-        foreach (var point in points)
+        foreach (RatePoint point in points)
         {
             string date = point.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             string buy = point.Buy.ToString(CultureInfo.InvariantCulture);

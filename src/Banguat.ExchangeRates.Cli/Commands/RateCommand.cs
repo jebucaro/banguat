@@ -3,6 +3,7 @@ using System.Text.Json;
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Features;
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
@@ -10,7 +11,8 @@ using Spectre.Console;
 
 namespace Banguat.ExchangeRates.Cli.Commands;
 
-[Command("rate", Description = "Show today's buy/sell rate for a currency. Defaults to USD (2) if --currency is omitted.")]
+[Command("rate",
+    Description = "Show today's buy/sell rate for a currency. Defaults to USD (2) if --currency is omitted.")]
 public sealed partial class RateCommand(
     IBanguatExchangeRateClient client,
     IAnsiConsole console,
@@ -33,14 +35,14 @@ public sealed partial class RateCommand(
             return;
         }
 
-        if (!TryLoadOverrideMap(mode, out var overrides))
+        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
         {
             return;
         }
 
         string? currencyAlias = GetAliasesFor(currency, overrides).FirstOrDefault();
 
-        if (!TryUnwrap(await client.GetCurrentRateAsync(currency), mode, out var response))
+        if (!TryUnwrap(await client.GetCurrentRateAsync(currency), mode, out GetCurrentRate.Response response))
         {
             return;
         }
@@ -67,20 +69,21 @@ public sealed partial class RateCommand(
             return;
         }
 
-        var point = response.Rates[0];
+        GetCurrentRate.RatePoint point = response.Rates[0];
         string hint = $"rate history --since <date> --currency {currency.Value}";
 
         if (mode == OutputMode.Json)
         {
-            System.Console.Out.WriteLine(JsonSerializer.Serialize(new
-            {
-                date = point.Date,
-                currency = currency.Value,
-                currencyAlias,
-                buy = point.Buy,
-                sell = point.Sell,
-                help = new[] { hint }
-            }, JsonOptions));
+            System.Console.Out.WriteLine(JsonSerializer.Serialize(
+                new
+                {
+                    date = point.Date,
+                    currency = currency.Value,
+                    currencyAlias,
+                    buy = point.Buy,
+                    sell = point.Sell,
+                    help = new[] { hint }
+                }, JsonOptions));
             return;
         }
 

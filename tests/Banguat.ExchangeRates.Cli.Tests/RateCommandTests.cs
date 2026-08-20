@@ -27,16 +27,16 @@ public class RateCommandTests
     /// </summary>
     private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
     {
-        TextWriter original = System.Console.Out;
+        TextWriter original = Console.Out;
         StringWriter writer = new();
-        System.Console.SetOut(writer);
+        Console.SetOut(writer);
         try
         {
             await action();
         }
         finally
         {
-            System.Console.SetOut(original);
+            Console.SetOut(original);
         }
 
         return writer.ToString();
@@ -49,10 +49,11 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(currency).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "24", Output = "plain"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "24", Output = "plain"
+            };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -71,10 +72,11 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(currency).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "24", Output = "rich"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "24", Output = "rich"
+            };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -90,10 +92,11 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(currency).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "24", Output = "json"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "24", Output = "json"
+            };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -109,7 +112,8 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(usd).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 7.6m, 7.6m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource());
+        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(),
+            new StubCurrencyOverrideSource());
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -122,10 +126,11 @@ public class RateCommandTests
         CurrencyCode currency = new(24);
         _client.GetCurrentRateAsync(currency).Returns(Result.Success(new GetCurrentRate.Response([])));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "24", Output = "plain"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "24", Output = "plain"
+            };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -138,10 +143,11 @@ public class RateCommandTests
         CurrencyCode currency = new(24);
         _client.GetCurrentRateAsync(currency).Returns(Result.Success(new GetCurrentRate.Response([])));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "24", Output = "json"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "24", Output = "json"
+            };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -156,10 +162,11 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(currency).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "24"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "24"
+            };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -174,10 +181,11 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(currency).Returns(
             Result.Failure<GetCurrentRate.Response>(Error.Failure("Banguat.Transport", "boom")));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "24"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "24"
+            };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -191,10 +199,11 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(usd).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 7.6215m, 7.6217m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "USD", Output = "json"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "USD", Output = "json"
+            };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -210,10 +219,11 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(usd).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 7.6215m, 7.6217m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "2", Output = "json"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "2", Output = "json"
+            };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -224,10 +234,11 @@ public class RateCommandTests
     public async Task ExecuteAsync_WhenCurrencyIsUnknownAlias_WritesErrorWithSuggestion()
     {
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
-        {
-            Currency = "USSD"
-        };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            {
+                Currency = "USSD"
+            };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -243,13 +254,10 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(eur).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 10.5m, 10.6m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        var caseSensitiveOverrides = new Dictionary<string, CurrencyCode> { ["EUR"] = new(24) };
+        Dictionary<string, CurrencyCode> caseSensitiveOverrides = new() { ["EUR"] = new CurrencyCode(24) };
         RateCommand command = new(
             _client, testConsole, new BundledCurrencyAliasCatalog(),
-            new StubCurrencyOverrideSource(caseSensitiveOverrides))
-        {
-            Currency = "eur", Output = "json"
-        };
+            new StubCurrencyOverrideSource(caseSensitiveOverrides)) { Currency = "eur", Output = "json" };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -263,10 +271,7 @@ public class RateCommandTests
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command = new(
             _client, testConsole, new BundledCurrencyAliasCatalog(),
-            new ThrowingCurrencyOverrideSource("Failed to read /fake/path: invalid JSON."))
-        {
-            Currency = "24"
-        };
+            new ThrowingCurrencyOverrideSource("Failed to read /fake/path: invalid JSON.")) { Currency = "24" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 

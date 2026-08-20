@@ -18,9 +18,9 @@ public static class GetCurrentUsdRate
 
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var request = new XElement(BanguatSoapNamespaces.Service + OperationName);
+            XElement request = new(BanguatSoapNamespaces.Service + OperationName);
 
-            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -32,13 +32,13 @@ public static class GetCurrentUsdRate
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            var varDolarElement = document
+            XElement? varDolarElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "TipoCambioDiaResult")
                 .FirstOrDefault()?
                 .Element(BanguatSoapNamespaces.Service + "CambioDolar")?
                 .Element(BanguatSoapNamespaces.Service + "VarDolar");
 
-            var varDolar = varDolarElement is null ? null : SoapVarDolar.FromElement(varDolarElement);
+            SoapVarDolar? varDolar = varDolarElement is null ? null : SoapVarDolar.FromElement(varDolarElement);
 
             return varDolar is null
                 ? Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("TipoCambioDia"))

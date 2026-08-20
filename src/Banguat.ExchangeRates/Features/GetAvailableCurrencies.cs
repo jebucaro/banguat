@@ -20,9 +20,9 @@ public static class GetAvailableCurrencies
 
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var request = new XElement(BanguatSoapNamespaces.Service + OperationName);
+            XElement request = new(BanguatSoapNamespaces.Service + OperationName);
 
-            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -34,19 +34,21 @@ public static class GetAvailableCurrencies
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            var resultElement = document
+            XElement? resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "VariablesDisponiblesResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
+            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("VariablesDisponibles"));
+            }
 
-            var variablesContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Variables");
+            XElement? variablesContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Variables");
 
-            var variables = SoapXmlParsing.ParseList(
+            IReadOnlyList<SoapVariable> variables = SoapXmlParsing.ParseList(
                 variablesContainer, BanguatSoapNamespaces.Service + "Variable", SoapVariable.FromElement);
 
-            var currencies = variables
+            List<CurrencyCatalogEntry> currencies = variables
                 .Select(variable => new CurrencyCatalogEntry(new CurrencyCode(variable.Moneda), variable.Descripcion))
                 .ToList();
 

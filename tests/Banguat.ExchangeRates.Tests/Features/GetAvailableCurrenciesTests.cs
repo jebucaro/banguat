@@ -9,12 +9,13 @@ public class GetAvailableCurrenciesTests
     [Fact]
     public async Task Handle_Should_ReturnCatalog_OnSuccess()
     {
-        var document = XDocument.Parse(
+        XDocument document = XDocument.Parse(
             """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesDisponiblesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesDisponiblesResult><Variables><Variable><moneda>1</moneda><descripcion>Quetzales</descripcion></Variable><Variable><moneda>2</moneda><descripcion>Dólares de EE.UU.</descripcion></Variable></Variables><TotalItems>2</TotalItems></VariablesDisponiblesResult></VariablesDisponiblesResponse></soap:Body></soap:Envelope>""");
-        var transport = new FakeBanguatSoapTransport(Result.Success(document));
-        var handler = new GetAvailableCurrencies.Handler(transport);
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetAvailableCurrencies.Handler handler = new(transport);
 
-        var result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
+        Result<GetAvailableCurrencies.Response> result =
+            await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.Currencies.Count);
@@ -28,12 +29,13 @@ public class GetAvailableCurrenciesTests
     [Fact]
     public async Task Handle_Should_ReturnUnexpectedShape_WhenResultMissing()
     {
-        var document = XDocument.Parse(
+        XDocument document = XDocument.Parse(
             """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesDisponiblesResponse xmlns="http://www.banguat.gob.gt/variables/ws/" /></soap:Body></soap:Envelope>""");
-        var transport = new FakeBanguatSoapTransport(Result.Success(document));
-        var handler = new GetAvailableCurrencies.Handler(transport);
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetAvailableCurrencies.Handler handler = new(transport);
 
-        var result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
+        Result<GetAvailableCurrencies.Response> result =
+            await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
@@ -42,11 +44,12 @@ public class GetAvailableCurrenciesTests
     [Fact]
     public async Task Handle_Should_PropagateTransportFailure()
     {
-        var transport = new FakeBanguatSoapTransport(
+        FakeBanguatSoapTransport transport = new(
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
-        var handler = new GetAvailableCurrencies.Handler(transport);
+        GetAvailableCurrencies.Handler handler = new(transport);
 
-        var result = await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
+        Result<GetAvailableCurrencies.Response> result =
+            await handler.Handle(new GetAvailableCurrencies.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);
