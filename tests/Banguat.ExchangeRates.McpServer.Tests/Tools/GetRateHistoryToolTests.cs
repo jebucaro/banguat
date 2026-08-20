@@ -16,14 +16,14 @@ public class GetRateHistoryToolTests
     public async Task GetRateHistoryAsync_Since_ReturnsHistory()
     {
         CurrencyCode eur = new(24);
-        var response = new GetCurrencyRateHistorySince.Response(
+        GetCurrencyRateHistorySince.Response response = new(
             [new GetCurrencyRateHistorySince.RatePoint(new DateOnly(2026, 8, 1), 1.1523m, 1.1523m)]);
         _client.GetCurrencyRateHistorySinceAsync(new DateOnly(2026, 8, 1), eur, Arg.Any<CancellationToken>())
             .Returns(Result.Success(response));
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         GetRateHistoryTool.RateHistoryResult result = await tool.GetRateHistoryAsync(
-            "24", since: "2026-08-01", from: null, to: null, cancellationToken: CancellationToken.None);
+            "24", "2026-08-01", null, null, CancellationToken.None);
 
         Assert.Equal(1, result.Count);
         Assert.Equal(24, result.Currency);
@@ -35,14 +35,15 @@ public class GetRateHistoryToolTests
     public async Task GetRateHistoryAsync_FromAndTo_ReturnsHistory()
     {
         CurrencyCode eur = new(24);
-        var response = new GetCurrencyRateHistory.Response(
+        GetCurrencyRateHistory.Response response = new(
             [new GetCurrencyRateHistory.RatePoint(new DateOnly(2026, 8, 1), 1.1523m, 1.1523m)]);
-        _client.GetCurrencyRateHistoryAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2), eur, Arg.Any<CancellationToken>())
+        _client.GetCurrencyRateHistoryAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2), eur,
+                Arg.Any<CancellationToken>())
             .Returns(Result.Success(response));
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         GetRateHistoryTool.RateHistoryResult result = await tool.GetRateHistoryAsync(
-            "24", since: null, from: "2026-08-01", to: "2026-08-02", cancellationToken: CancellationToken.None);
+            "24", null, "2026-08-01", "2026-08-02", CancellationToken.None);
 
         Assert.Equal(1, result.Count);
     }
@@ -51,12 +52,13 @@ public class GetRateHistoryToolTests
     public async Task GetRateHistoryAsync_FromAndTo_EmptyRange_ReturnsEmptyResult()
     {
         CurrencyCode eur = new(24);
-        _client.GetCurrencyRateHistoryAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2), eur, Arg.Any<CancellationToken>())
+        _client.GetCurrencyRateHistoryAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2), eur,
+                Arg.Any<CancellationToken>())
             .Returns(Result.Success(new GetCurrencyRateHistory.Response([])));
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         GetRateHistoryTool.RateHistoryResult result = await tool.GetRateHistoryAsync(
-            "24", since: null, from: "2026-08-01", to: "2026-08-02", cancellationToken: CancellationToken.None);
+            "24", null, "2026-08-01", "2026-08-02", CancellationToken.None);
 
         Assert.Equal(0, result.Count);
         Assert.Empty(result.History);
@@ -68,7 +70,7 @@ public class GetRateHistoryToolTests
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         await Assert.ThrowsAsync<McpException>(() => tool.GetRateHistoryAsync(
-            "usd", since: null, from: null, to: null, cancellationToken: CancellationToken.None));
+            "usd", null, null, null, CancellationToken.None));
     }
 
     [Fact]
@@ -77,7 +79,7 @@ public class GetRateHistoryToolTests
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         await Assert.ThrowsAsync<McpException>(() => tool.GetRateHistoryAsync(
-            "usd", since: "2026-08-01", from: "2026-08-01", to: "2026-08-02", cancellationToken: CancellationToken.None));
+            "usd", "2026-08-01", "2026-08-01", "2026-08-02", CancellationToken.None));
     }
 
     [Fact]
@@ -86,7 +88,7 @@ public class GetRateHistoryToolTests
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         await Assert.ThrowsAsync<McpException>(() => tool.GetRateHistoryAsync(
-            "usd", since: null, from: "2026-08-01", to: null, cancellationToken: CancellationToken.None));
+            "usd", null, "2026-08-01", null, CancellationToken.None));
     }
 
     [Fact]
@@ -95,7 +97,7 @@ public class GetRateHistoryToolTests
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         await Assert.ThrowsAsync<McpException>(() => tool.GetRateHistoryAsync(
-            "usd", since: "08/01/2026", from: null, to: null, cancellationToken: CancellationToken.None));
+            "usd", "08/01/2026", null, null, CancellationToken.None));
     }
 
     [Fact]
@@ -107,7 +109,7 @@ public class GetRateHistoryToolTests
         GetRateHistoryTool tool = new(_client, _aliasCatalog);
 
         McpException exception = await Assert.ThrowsAsync<McpException>(() => tool.GetRateHistoryAsync(
-            "usd", since: "2026-08-01", from: null, to: null, cancellationToken: CancellationToken.None));
+            "usd", "2026-08-01", null, null, CancellationToken.None));
 
         Assert.Equal("boom", exception.Message);
     }

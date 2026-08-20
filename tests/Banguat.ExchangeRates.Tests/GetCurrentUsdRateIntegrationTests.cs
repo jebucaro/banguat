@@ -12,12 +12,12 @@ public class GetCurrentUsdRateIntegrationTests
     [Fact]
     public async Task GetCurrentUsdRateAsync_Should_ReturnTodaysRate_FromLiveService()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddBanguatExchangeRates();
-        using var provider = services.BuildServiceProvider();
-        var client = provider.GetRequiredService<IBanguatExchangeRateClient>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IBanguatExchangeRateClient client = provider.GetRequiredService<IBanguatExchangeRateClient>();
 
-        var result = await client.GetCurrentUsdRateAsync();
+        Result<GetCurrentUsdRate.Response> result = await client.GetCurrentUsdRateAsync();
 
         Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Description : string.Empty);
         Assert.True(result.Value.Rate > 0);

@@ -27,16 +27,16 @@ public class CurrenciesCommandTests
     /// </summary>
     private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
     {
-        TextWriter original = System.Console.Out;
+        TextWriter original = Console.Out;
         StringWriter writer = new();
-        System.Console.SetOut(writer);
+        Console.SetOut(writer);
         try
         {
             await action();
         }
         finally
         {
-            System.Console.SetOut(original);
+            Console.SetOut(original);
         }
 
         return writer.ToString();
@@ -182,7 +182,7 @@ public class CurrenciesCommandTests
     {
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
         TestConsole testConsole = new TestConsole().Width(200);
-        var overrides = new Dictionary<string, CurrencyCode> { ["DOLLAR"] = new(2) };
+        Dictionary<string, CurrencyCode> overrides = new() { ["DOLLAR"] = new CurrencyCode(2) };
         CurrenciesCommand command =
             new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource(overrides))
             {

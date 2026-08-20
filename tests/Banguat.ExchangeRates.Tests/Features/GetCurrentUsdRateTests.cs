@@ -12,10 +12,11 @@ public class GetCurrentUsdRateTests
     [Fact]
     public async Task Handle_Should_ReturnTodaysRate_OnSuccess()
     {
-        var transport = new FakeBanguatSoapTransport(Result.Success(SuccessDocument));
-        var handler = new GetCurrentUsdRate.Handler(transport);
+        FakeBanguatSoapTransport transport = new(Result.Success(SuccessDocument));
+        GetCurrentUsdRate.Handler handler = new(transport);
 
-        var result = await handler.Handle(new GetCurrentUsdRate.Query(), CancellationToken.None);
+        Result<GetCurrentUsdRate.Response> result =
+            await handler.Handle(new GetCurrentUsdRate.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(new DateOnly(2026, 8, 17), result.Value.Date);
@@ -26,11 +27,12 @@ public class GetCurrentUsdRateTests
     [Fact]
     public async Task Handle_Should_PropagateTransportFailure()
     {
-        var transport = new FakeBanguatSoapTransport(
+        FakeBanguatSoapTransport transport = new(
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
-        var handler = new GetCurrentUsdRate.Handler(transport);
+        GetCurrentUsdRate.Handler handler = new(transport);
 
-        var result = await handler.Handle(new GetCurrentUsdRate.Query(), CancellationToken.None);
+        Result<GetCurrentUsdRate.Response> result =
+            await handler.Handle(new GetCurrentUsdRate.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);
@@ -39,12 +41,13 @@ public class GetCurrentUsdRateTests
     [Fact]
     public async Task Handle_Should_ReturnUnexpectedShape_WhenResultElementMissing()
     {
-        var emptyDocument = XDocument.Parse(
+        XDocument emptyDocument = XDocument.Parse(
             """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioDiaResponse xmlns="http://www.banguat.gob.gt/variables/ws/" /></soap:Body></soap:Envelope>""");
-        var transport = new FakeBanguatSoapTransport(Result.Success(emptyDocument));
-        var handler = new GetCurrentUsdRate.Handler(transport);
+        FakeBanguatSoapTransport transport = new(Result.Success(emptyDocument));
+        GetCurrentUsdRate.Handler handler = new(transport);
 
-        var result = await handler.Handle(new GetCurrentUsdRate.Query(), CancellationToken.None);
+        Result<GetCurrentUsdRate.Response> result =
+            await handler.Handle(new GetCurrentUsdRate.Query(), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
