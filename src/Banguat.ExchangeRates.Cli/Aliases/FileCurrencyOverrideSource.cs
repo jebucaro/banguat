@@ -38,7 +38,7 @@ public sealed class FileCurrencyOverrideSource(string? filePath = null) : ICurre
                 $"Failed to read {_filePath}: invalid JSON ({ex.Message}). Fix or remove the file to continue.");
         }
 
-        var result = new Dictionary<string, CurrencyCode>(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, CurrencyCode> result = new(StringComparer.OrdinalIgnoreCase);
         foreach ((string alias, int value) in raw ?? [])
         {
             result[alias] = new CurrencyCode(value);

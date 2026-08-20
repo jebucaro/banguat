@@ -6,7 +6,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
@@ -43,7 +43,7 @@ builder.Services.AddOpenTelemetry()
         .AddMeter("Experimental.ModelContextProtocol")
         .AddMeter(BanguatExchangeRatesDiagnostics.MeterName));
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 app.MapDefaultEndpoints();
 app.UseCors();

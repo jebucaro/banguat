@@ -16,7 +16,9 @@ public enum OutputMode
 }
 
 public abstract class BanguatCommandBase(
-    IAnsiConsole console, ICurrencyAliasCatalog aliasCatalog, ICurrencyOverrideSource overrideSource)
+    IAnsiConsole console,
+    ICurrencyAliasCatalog aliasCatalog,
+    ICurrencyOverrideSource overrideSource)
 {
     protected static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -76,7 +78,8 @@ public abstract class BanguatCommandBase(
 
         try
         {
-            _overrideMapCache = new Dictionary<string, CurrencyCode>(overrideSource.Load(), StringComparer.OrdinalIgnoreCase);
+            _overrideMapCache =
+                new Dictionary<string, CurrencyCode>(overrideSource.Load(), StringComparer.OrdinalIgnoreCase);
             overrides = _overrideMapCache;
             return true;
         }
@@ -88,10 +91,12 @@ public abstract class BanguatCommandBase(
         }
     }
 
-    protected IReadOnlyList<string> GetAliasesFor(CurrencyCode code, IReadOnlyDictionary<string, CurrencyCode> overrides)
+    protected IReadOnlyList<string> GetAliasesFor(CurrencyCode code,
+        IReadOnlyDictionary<string, CurrencyCode> overrides)
     {
         IEnumerable<string> overrideAliases = overrides.Where(kvp => kvp.Value == code).Select(kvp => kvp.Key);
-        IEnumerable<string> bundledAliases = aliasCatalog.GetAliases(code).Where(alias => !overrides.ContainsKey(alias));
+        IEnumerable<string> bundledAliases =
+            aliasCatalog.GetAliases(code).Where(alias => !overrides.ContainsKey(alias));
 
         return overrideAliases.Concat(bundledAliases)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -106,7 +111,7 @@ public abstract class BanguatCommandBase(
             return true;
         }
 
-        if (!TryLoadOverrideMap(mode, out var overrides))
+        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
         {
             currency = default;
             return false;
@@ -160,18 +165,23 @@ public abstract class BanguatCommandBase(
     {
         int[,] distances = new int[a.Length + 1, b.Length + 1];
 
-        for (int i = 0; i <= a.Length; i++) distances[i, 0] = i;
-        for (int j = 0; j <= b.Length; j++) distances[0, j] = j;
+        for (int i = 0; i <= a.Length; i++)
+        {
+            distances[i, 0] = i;
+        }
+
+        for (int j = 0; j <= b.Length; j++)
+        {
+            distances[0, j] = j;
+        }
 
         for (int i = 1; i <= a.Length; i++)
+        for (int j = 1; j <= b.Length; j++)
         {
-            for (int j = 1; j <= b.Length; j++)
-            {
-                int cost = a[i - 1] == b[j - 1] ? 0 : 1;
-                distances[i, j] = Math.Min(
-                    Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
-                    distances[i - 1, j - 1] + cost);
-            }
+            int cost = a[i - 1] == b[j - 1] ? 0 : 1;
+            distances[i, j] = Math.Min(
+                Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
+                distances[i - 1, j - 1] + cost);
         }
 
         return distances[a.Length, b.Length];
