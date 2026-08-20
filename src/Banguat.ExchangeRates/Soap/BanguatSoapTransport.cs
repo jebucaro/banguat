@@ -18,16 +18,16 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
         ArgumentException.ThrowIfNullOrWhiteSpace(operationName);
         ArgumentNullException.ThrowIfNull(operation);
 
-        using var activity = BanguatExchangeRatesDiagnostics.ActivitySource.StartActivity(
+        using Activity? activity = BanguatExchangeRatesDiagnostics.ActivitySource.StartActivity(
             $"Banguat.ExchangeRates.Soap.{operationName}", ActivityKind.Client);
         activity?.SetTag("banguat.soap.operation", operationName);
         activity?.SetTag("server.address", httpClient.BaseAddress?.Host);
         activity?.SetTag("http.request.method", "POST");
 
-        var envelope = CreateEnvelope(operation);
-        var envelopeXml = envelope.Declaration + envelope.ToString(SaveOptions.DisableFormatting);
+        XDocument envelope = CreateEnvelope(operation);
+        string envelopeXml = envelope.Declaration + envelope.ToString(SaveOptions.DisableFormatting);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, (Uri?)null)
+        using HttpRequestMessage request = new(HttpMethod.Post, (Uri?)null)
         {
             Content = new StringContent(envelopeXml, Encoding.UTF8)
         };
@@ -37,7 +37,7 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
         string body;
         try
         {
-            var response = await httpClient.SendAsync(request, cancellationToken);
+            HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
             activity?.SetTag("http.response.status_code", (int)response.StatusCode);
             body = await response.Content.ReadAsStringAsync(cancellationToken);
         }
@@ -66,12 +66,12 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
                 BanguatErrors.TransportFailure($"Response body was not valid XML: {ex.Message}"));
         }
 
-        var fault = document.Descendants(BanguatSoapNamespaces.Soap + "Fault").FirstOrDefault();
+        XElement? fault = document.Descendants(BanguatSoapNamespaces.Soap + "Fault").FirstOrDefault();
         if (fault is not null)
         {
-            var faultCode = fault.Element("faultcode")?.Value ?? "Unknown";
-            var faultString = fault.Element("faultstring")?.Value
-                              ?? "The service returned an unspecified SOAP fault.";
+            string faultCode = fault.Element("faultcode")?.Value ?? "Unknown";
+            string faultString = fault.Element("faultstring")?.Value
+                                 ?? "The service returned an unspecified SOAP fault.";
             activity?.SetTag("banguat.soap.fault_code", faultCode);
             activity?.SetStatus(ActivityStatusCode.Error, faultString);
             return Result.Failure<XDocument>(BanguatErrors.SoapFault(faultCode, faultString));

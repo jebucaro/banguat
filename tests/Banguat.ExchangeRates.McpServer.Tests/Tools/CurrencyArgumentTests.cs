@@ -27,8 +27,8 @@ public class CurrencyArgumentTests
     [Fact]
     public void Resolve_UnknownValue_ThrowsMcpException()
     {
-        McpException exception = Assert.Throws<McpException>(
-            () => CurrencyArgument.Resolve("not-a-currency", _aliasCatalog));
+        McpException exception =
+            Assert.Throws<McpException>(() => CurrencyArgument.Resolve("not-a-currency", _aliasCatalog));
 
         Assert.Contains("not-a-currency", exception.Message);
     }

@@ -15,7 +15,7 @@ public class GetCurrenciesToolTests
     [Fact]
     public async Task GetCurrenciesAsync_ReturnsCurrenciesWithAliasesAndCount()
     {
-        var response = new GetAvailableCurrencies.Response(
+        GetAvailableCurrencies.Response response = new(
         [
             new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(2), "Dólares de EE.UU."),
             new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(1), "Quetzales")
@@ -37,8 +37,8 @@ public class GetCurrenciesToolTests
             .Returns(Result.Failure<GetAvailableCurrencies.Response>(Error.Failure("transport", "boom")));
         GetCurrenciesTool tool = new(_client, _aliasCatalog);
 
-        McpException exception = await Assert.ThrowsAsync<McpException>(
-            () => tool.GetCurrenciesAsync(CancellationToken.None));
+        McpException exception =
+            await Assert.ThrowsAsync<McpException>(() => tool.GetCurrenciesAsync(CancellationToken.None));
 
         Assert.Equal("boom", exception.Message);
     }

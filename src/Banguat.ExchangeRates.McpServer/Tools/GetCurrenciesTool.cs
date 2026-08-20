@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Features;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
@@ -13,10 +14,11 @@ public sealed class GetCurrenciesTool(IBanguatExchangeRateClient client, ICurren
     public sealed record CurrenciesResult(int Count, IReadOnlyList<CurrencyEntry> Currencies);
 
     [McpServerTool(Name = "get_currencies")]
-    [Description("Lists the currencies available from the Banguat exchange rate service, with their numeric codes and known aliases.")]
+    [Description(
+        "Lists the currencies available from the Banguat exchange rate service, with their numeric codes and known aliases.")]
     public async Task<CurrenciesResult> GetCurrenciesAsync(CancellationToken cancellationToken = default)
     {
-        var result = await client.GetAvailableCurrenciesAsync(cancellationToken);
+        Result<GetAvailableCurrencies.Response> result = await client.GetAvailableCurrenciesAsync(cancellationToken);
         if (result.IsFailure)
         {
             throw new McpException(result.Error.Description);

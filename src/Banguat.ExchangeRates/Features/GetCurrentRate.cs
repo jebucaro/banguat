@@ -28,11 +28,11 @@ public static class GetCurrentRate
         {
             Activity.Current?.SetTag("banguat.currency", query.Currency.Value);
 
-            var request = new XElement(
+            XElement request = new(
                 BanguatSoapNamespaces.Service + OperationName,
                 new XElement(BanguatSoapNamespaces.Service + "variable", query.Currency.Value));
 
-            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -44,30 +44,33 @@ public static class GetCurrentRate
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            var resultElement = document
+            XElement? resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "VariablesResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
+            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("Variables"));
+            }
 
-            var cambioDiaContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDia");
-            var vars = SoapXmlParsing.ParseList(
+            XElement? cambioDiaContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDia");
+            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
                 cambioDiaContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
 
             if (vars.Count > 0)
             {
-                var points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
+                List<RatePoint> points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
                 return Result.Success(new Response(points));
             }
 
-            var cambioDolarContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDolar");
-            var varDolars = SoapXmlParsing.ParseList(
+            XElement? cambioDolarContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDolar");
+            IReadOnlyList<SoapVarDolar> varDolars = SoapXmlParsing.ParseList(
                 cambioDolarContainer, BanguatSoapNamespaces.Service + "VarDolar", SoapVarDolar.FromElement);
 
             if (varDolars.Count > 0)
             {
-                var points = varDolars.Select(v => new RatePoint(v.Fecha, v.Referencia, v.Referencia)).ToList();
+                List<RatePoint> points = varDolars.Select(v => new RatePoint(v.Fecha, v.Referencia, v.Referencia))
+                    .ToList();
                 return Result.Success(new Response(points));
             }
 

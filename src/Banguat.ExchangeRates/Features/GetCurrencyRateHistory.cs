@@ -23,12 +23,16 @@ public static class GetCurrencyRateHistory
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
             Activity.Current?.SetTag("banguat.currency", query.Currency.Value);
-            Activity.Current?.SetTag("banguat.date.from", query.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            Activity.Current?.SetTag("banguat.date.from",
+                query.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             Activity.Current?.SetTag("banguat.date.to", query.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
-            if (query.To < query.From) return Result.Failure<Response>(BanguatErrors.InvalidDateRange());
+            if (query.To < query.From)
+            {
+                return Result.Failure<Response>(BanguatErrors.InvalidDateRange());
+            }
 
-            var request = new XElement(
+            XElement request = new(
                 BanguatSoapNamespaces.Service + OperationName,
                 new XElement(
                     BanguatSoapNamespaces.Service + "fechainit",
@@ -38,7 +42,7 @@ public static class GetCurrencyRateHistory
                     query.To.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)),
                 new XElement(BanguatSoapNamespaces.Service + "moneda", query.Currency.Value));
 
-            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -50,18 +54,20 @@ public static class GetCurrencyRateHistory
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            var resultElement = document
+            XElement? resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "TipoCambioRangoMonedaResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
+            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("TipoCambioRangoMoneda"));
+            }
 
-            var varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
-            var vars = SoapXmlParsing.ParseList(
+            XElement? varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
+            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
                 varsContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
 
-            var points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
+            List<RatePoint> points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
 
             return Result.Success(new Response(points));
         }

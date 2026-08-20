@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-      <ProjectReference Include="..\Banguat.ExchangeRates\Banguat.ExchangeRates.csproj" />
+        <ProjectReference Include="..\Banguat.ExchangeRates\Banguat.ExchangeRates.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="CliFx" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-      <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-      <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
-      <PackageReference Include="Scrutor" />
-      <PackageReference Include="Spectre.Console" />
+        <PackageReference Include="CliFx"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+        <PackageReference Include="Scrutor"/>
+        <PackageReference Include="Spectre.Console"/>
     </ItemGroup>
 
     <PropertyGroup>

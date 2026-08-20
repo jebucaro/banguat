@@ -29,7 +29,7 @@ public static class Program
         // Opt-in only: tracing/metrics from Banguat.ExchangeRates are exported over OTLP only when
         // OTEL_EXPORTER_OTLP_ENDPOINT is set (e.g. pointed at the Aspire dashboard), mirroring
         // ServiceDefaults' AddOpenTelemetryExporters gating. The CLI never requires Aspire to run.
-        var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
+        string? otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
         if (!string.IsNullOrWhiteSpace(otlpEndpoint))
         {
             services.AddOpenTelemetry()

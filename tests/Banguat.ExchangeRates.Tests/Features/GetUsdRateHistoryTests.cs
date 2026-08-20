@@ -10,12 +10,12 @@ public class GetUsdRateHistoryTests
     [Fact]
     public async Task Handle_Should_ReturnRatePoints_OnSuccess()
     {
-        var document = XDocument.Parse(
+        XDocument document = XDocument.Parse(
             """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioRangoResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><TipoCambioRangoResult><Vars><Var><moneda>2</moneda><fecha>01/08/2026</fecha><venta>7.6350</venta><compra>7.6231</compra></Var><Var><moneda>2</moneda><fecha>05/08/2026</fecha><venta>7.62541</venta><compra>7.62484</compra></Var></Vars><TotalItems>2</TotalItems></TipoCambioRangoResult></TipoCambioRangoResponse></soap:Body></soap:Envelope>""");
-        var transport = new FakeBanguatSoapTransport(Result.Success(document));
-        var handler = new GetUsdRateHistory.Handler(transport);
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetUsdRateHistory.Handler handler = new(transport);
 
-        var result = await handler.Handle(
+        Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -38,10 +38,10 @@ public class GetUsdRateHistoryTests
     [Fact]
     public async Task Handle_Should_ReturnInvalidDateRange_WhenToIsBeforeFrom()
     {
-        var transport = new FakeBanguatSoapTransport(Result.Success(new XDocument()));
-        var handler = new GetUsdRateHistory.Handler(transport);
+        FakeBanguatSoapTransport transport = new(Result.Success(new XDocument()));
+        GetUsdRateHistory.Handler handler = new(transport);
 
-        var result = await handler.Handle(
+        Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 5), new DateOnly(2026, 8, 1)), CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -52,12 +52,12 @@ public class GetUsdRateHistoryTests
     [Fact]
     public async Task Handle_Should_ReturnUnexpectedShape_WhenResultMissing()
     {
-        var document = XDocument.Parse(
+        XDocument document = XDocument.Parse(
             """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioRangoResponse xmlns="http://www.banguat.gob.gt/variables/ws/" /></soap:Body></soap:Envelope>""");
-        var transport = new FakeBanguatSoapTransport(Result.Success(document));
-        var handler = new GetUsdRateHistory.Handler(transport);
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetUsdRateHistory.Handler handler = new(transport);
 
-        var result = await handler.Handle(
+        Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -67,11 +67,11 @@ public class GetUsdRateHistoryTests
     [Fact]
     public async Task Handle_Should_PropagateTransportFailure()
     {
-        var transport = new FakeBanguatSoapTransport(
+        FakeBanguatSoapTransport transport = new(
             Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
-        var handler = new GetUsdRateHistory.Handler(transport);
+        GetUsdRateHistory.Handler handler = new(transport);
 
-        var result = await handler.Handle(
+        Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
 
         Assert.True(result.IsFailure);

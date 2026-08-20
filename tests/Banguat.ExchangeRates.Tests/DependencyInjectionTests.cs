@@ -12,12 +12,12 @@ public class DependencyInjectionTests
     [Fact]
     public void AddBanguatExchangeRates_Should_ResolveClient()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddBanguatExchangeRates();
 
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
 
-        var client = provider.GetRequiredService<IBanguatExchangeRateClient>();
+        IBanguatExchangeRateClient client = provider.GetRequiredService<IBanguatExchangeRateClient>();
 
         Assert.NotNull(client);
     }
@@ -25,14 +25,14 @@ public class DependencyInjectionTests
     [Fact]
     public void AddBanguatExchangeRates_Should_ApplyOptions()
     {
-        var services = new ServiceCollection();
-        var customAddress = new Uri("https://example.test/TipoCambio.asmx");
+        ServiceCollection services = new();
+        Uri customAddress = new("https://example.test/TipoCambio.asmx");
 
         services.AddBanguatExchangeRates(options => options.BaseAddress = customAddress);
 
-        using var provider = services.BuildServiceProvider();
-        var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient(nameof(IBanguatSoapTransport));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IHttpClientFactory httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+        HttpClient httpClient = httpClientFactory.CreateClient(nameof(IBanguatSoapTransport));
 
         Assert.Equal(customAddress, httpClient.BaseAddress);
     }
@@ -40,12 +40,13 @@ public class DependencyInjectionTests
     [Fact]
     public void AddBanguatExchangeRates_Should_WrapHandlersWithTracingDecorator()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddBanguatExchangeRates();
 
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
 
-        var handler = provider.GetRequiredService<IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>();
+        IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response> handler =
+            provider.GetRequiredService<IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>();
 
         Assert.IsType<TracingDecorator.QueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>(handler);
     }
@@ -53,12 +54,12 @@ public class DependencyInjectionTests
     [Fact]
     public void AddBanguatExchangeRates_Should_ResolveCurrencyAliasCatalog()
     {
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
         services.AddBanguatExchangeRates();
 
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
 
-        var catalog = provider.GetRequiredService<ICurrencyAliasCatalog>();
+        ICurrencyAliasCatalog catalog = provider.GetRequiredService<ICurrencyAliasCatalog>();
 
         Assert.NotNull(catalog);
     }

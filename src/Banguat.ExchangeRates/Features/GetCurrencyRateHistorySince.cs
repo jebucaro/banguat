@@ -23,16 +23,17 @@ public static class GetCurrencyRateHistorySince
         public async Task<Result<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
             Activity.Current?.SetTag("banguat.currency", query.Currency.Value);
-            Activity.Current?.SetTag("banguat.date.since", query.Since.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            Activity.Current?.SetTag("banguat.date.since",
+                query.Since.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
-            var request = new XElement(
+            XElement request = new(
                 BanguatSoapNamespaces.Service + OperationName,
                 new XElement(
                     BanguatSoapNamespaces.Service + "fechainit",
                     query.Since.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)),
                 new XElement(BanguatSoapNamespaces.Service + "moneda", query.Currency.Value));
 
-            var transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
+            Result<XDocument> transportResult = await transport.InvokeAsync(OperationName, request, cancellationToken);
 
             return transportResult.IsFailure
                 ? Result.Failure<Response>(transportResult.Error)
@@ -44,18 +45,20 @@ public static class GetCurrencyRateHistorySince
     {
         internal static Result<Response> Parse(XDocument document)
         {
-            var resultElement = document
+            XElement? resultElement = document
                 .Descendants(BanguatSoapNamespaces.Service + "TipoCambioFechaInicialMonedaResult")
                 .FirstOrDefault();
 
             if (resultElement is null)
+            {
                 return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("TipoCambioFechaInicialMoneda"));
+            }
 
-            var varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
-            var vars = SoapXmlParsing.ParseList(
+            XElement? varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
+            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
                 varsContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
 
-            var points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
+            List<RatePoint> points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
 
             return Result.Success(new Response(points));
         }

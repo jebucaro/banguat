@@ -16,7 +16,7 @@ public class GetRateToolTests
     public async Task GetRateAsync_DefaultsToUsd_ReturnsRate()
     {
         CurrencyCode usd = new(2);
-        var response = new GetCurrentRate.Response(
+        GetCurrentRate.Response response = new(
             [new GetCurrentRate.RatePoint(new DateOnly(2026, 8, 18), 7.62157m, 7.62157m)]);
         _client.GetCurrentRateAsync(usd, Arg.Any<CancellationToken>()).Returns(Result.Success(response));
         GetRateTool tool = new(_client, _aliasCatalog);
@@ -61,8 +61,8 @@ public class GetRateToolTests
             .Returns(Result.Failure<GetCurrentRate.Response>(Error.Failure("transport", "boom")));
         GetRateTool tool = new(_client, _aliasCatalog);
 
-        McpException exception = await Assert.ThrowsAsync<McpException>(
-            () => tool.GetRateAsync("usd", CancellationToken.None));
+        McpException exception =
+            await Assert.ThrowsAsync<McpException>(() => tool.GetRateAsync("usd", CancellationToken.None));
 
         Assert.Equal("boom", exception.Message);
     }

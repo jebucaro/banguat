@@ -22,7 +22,7 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
 
         foreach ((string alias, int value) in raw)
         {
-            var code = new CurrencyCode(value);
+            CurrencyCode code = new(value);
             _aliasToCode[alias] = code;
 
             if (!_codeToAliases.TryGetValue(code, out List<string>? aliases))
@@ -35,10 +35,15 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
         }
     }
 
-    public bool TryResolve(string alias, out CurrencyCode code) => _aliasToCode.TryGetValue(alias, out code);
+    public bool TryResolve(string alias, out CurrencyCode code)
+    {
+        return _aliasToCode.TryGetValue(alias, out code);
+    }
 
-    public IReadOnlyList<string> GetAliases(CurrencyCode code) =>
-        _codeToAliases.TryGetValue(code, out List<string>? aliases) ? aliases.AsReadOnly() : [];
+    public IReadOnlyList<string> GetAliases(CurrencyCode code)
+    {
+        return _codeToAliases.TryGetValue(code, out List<string>? aliases) ? aliases.AsReadOnly() : [];
+    }
 
     public IReadOnlyList<string> AllAliases => _aliasToCode.Keys.ToList();
 }
