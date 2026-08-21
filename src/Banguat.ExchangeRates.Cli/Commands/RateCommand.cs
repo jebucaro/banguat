@@ -40,7 +40,7 @@ public sealed partial class RateCommand(
             return;
         }
 
-        string? currencyAlias = GetAliasesFor(currency, overrides).FirstOrDefault();
+        string? currencyAlias = GetAliasFor(currency, overrides);
 
         if (!TryUnwrap(await client.GetCurrentRateAsync(currency), mode, out GetCurrentRate.Response response))
         {

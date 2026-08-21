@@ -36,7 +36,7 @@ public sealed class GetRateEndpoint : IEndpoint
             return CurrencyRouteBinder.UnknownCurrencyProblem(currency);
         }
 
-        string? alias = aliasCatalog.GetAliases(code).FirstOrDefault();
+        string? alias = aliasCatalog.GetAlias(code);
 
         Result<GetCurrentRate.Response> result = await client.GetCurrentRateAsync(code, cancellationToken);
         if (result.IsFailure)

@@ -55,7 +55,7 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
                 title: "Invalid date range parameters");
         }
 
-        string? alias = aliasCatalog.GetAliases(code).FirstOrDefault();
+        string? alias = aliasCatalog.GetAlias(code);
         List<RateHistoryPoint> points;
 
         if (sinceGiven)

@@ -9,13 +9,13 @@ namespace Banguat.ExchangeRates.McpServer.Tools;
 [McpServerToolType]
 public sealed class GetCurrenciesTool(IBanguatExchangeRateClient client, ICurrencyAliasCatalog aliasCatalog)
 {
-    public sealed record CurrencyEntry(int Code, string Description, IReadOnlyList<string> Aliases);
+    public sealed record CurrencyEntry(int Code, string Description, string? Alias);
 
     public sealed record CurrenciesResult(int Count, IReadOnlyList<CurrencyEntry> Currencies);
 
     [McpServerTool(Name = "get_currencies")]
     [Description(
-        "Lists the currencies available from the Banguat exchange rate service, with their numeric codes and known aliases.")]
+        "Lists the currencies available from the Banguat exchange rate service, with their numeric codes and display alias.")]
     public async Task<CurrenciesResult> GetCurrenciesAsync(CancellationToken cancellationToken = default)
     {
         Result<GetAvailableCurrencies.Response> result = await client.GetAvailableCurrenciesAsync(cancellationToken);
@@ -25,7 +25,7 @@ public sealed class GetCurrenciesTool(IBanguatExchangeRateClient client, ICurren
         }
 
         List<CurrencyEntry> currencies = result.Value.Currencies
-            .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAliases(c.Code)))
+            .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAlias(c.Code)))
             .ToList();
 
         return new CurrenciesResult(currencies.Count, currencies);

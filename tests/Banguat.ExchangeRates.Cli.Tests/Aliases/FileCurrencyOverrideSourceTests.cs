@@ -73,4 +73,43 @@ public class FileCurrencyOverrideSourceTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void Load_WhenTwoAliasesShareACode_ThrowsCurrencyOverrideLoadException()
+    {
+        string path = Path.GetTempFileName();
+        File.WriteAllText(path, """{"EUR": 24, "EURO": 24}""");
+        try
+        {
+            FileCurrencyOverrideSource source = new(path);
+
+            CurrencyOverrideLoadException exception =
+                Assert.Throws<CurrencyOverrideLoadException>(() => source.Load());
+
+            Assert.Contains("24", exception.Message);
+            Assert.Contains("EUR", exception.Message);
+            Assert.Contains("EURO", exception.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Load_WhenTwoAliasesDifferOnlyByCase_ThrowsCurrencyOverrideLoadException()
+    {
+        string path = Path.GetTempFileName();
+        File.WriteAllText(path, """{"USD": 2, "usd": 3}""");
+        try
+        {
+            FileCurrencyOverrideSource source = new(path);
+
+            Assert.Throws<CurrencyOverrideLoadException>(() => source.Load());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 }

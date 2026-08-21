@@ -33,7 +33,7 @@ public sealed class GetRateHistoryTool(IBanguatExchangeRateClient client, ICurre
         CancellationToken cancellationToken = default)
     {
         CurrencyCode code = CurrencyArgument.Resolve(currency, aliasCatalog);
-        string? alias = aliasCatalog.GetAliases(code).FirstOrDefault();
+        string? alias = aliasCatalog.GetAlias(code);
 
         bool sinceGiven = !string.IsNullOrWhiteSpace(since);
         bool fromGiven = !string.IsNullOrWhiteSpace(from);

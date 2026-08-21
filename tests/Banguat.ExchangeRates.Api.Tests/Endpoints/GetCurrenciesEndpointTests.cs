@@ -14,7 +14,7 @@ public class GetCurrenciesEndpointTests
     private readonly ICurrencyAliasCatalog _aliasCatalog = new BundledCurrencyAliasCatalog();
 
     [Fact]
-    public async Task HandleAsync_ReturnsCurrenciesWithAliasesAndCount()
+    public async Task HandleAsync_ReturnsCurrenciesWithAliasAndCount()
     {
         GetAvailableCurrencies.Response response = new(
         [
@@ -30,7 +30,7 @@ public class GetCurrenciesEndpointTests
             Assert.IsType<Ok<GetCurrenciesEndpoint.CurrenciesResponse>>(result.Result);
         Assert.Equal(2, ok.Value!.Count);
         GetCurrenciesEndpoint.CurrencyEntry usd = Assert.Single(ok.Value.Currencies, c => c.Code == 2);
-        Assert.Contains("USD", usd.Aliases, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal("USD", usd.Alias, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
