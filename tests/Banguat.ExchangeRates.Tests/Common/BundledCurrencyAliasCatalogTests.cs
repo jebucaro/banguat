@@ -60,12 +60,12 @@ public class BundledCurrencyAliasCatalogTests
     {
         Dictionary<string, CurrencyCode> aliasToCode = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["USD"] = new CurrencyCode(2),
-            ["DOLLAR"] = new CurrencyCode(2)
+            ["USD"] = new CurrencyCode(2), ["DOLLAR"] = new CurrencyCode(2)
         };
 
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => BundledCurrencyAliasCatalog.BuildCodeToAliasIndex(aliasToCode));
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() =>
+                BundledCurrencyAliasCatalog.BuildCodeToAliasIndex(aliasToCode));
 
         Assert.Contains("2", exception.Message);
         Assert.Contains("USD", exception.Message);

@@ -43,17 +43,16 @@ public sealed partial class CurrenciesCommand(
 
         if (mode == OutputMode.Json)
         {
-            System.Console.Out.WriteLine(JsonSerializer.Serialize(new
-            {
-                count = response.Currencies.Count,
-                currencies = response.Currencies.Select(c => new
+            System.Console.Out.WriteLine(JsonSerializer.Serialize(
+                new
                 {
-                    code = c.Code.Value,
-                    description = c.Description,
-                    alias = GetAliasFor(c.Code, overrides)
-                }).ToList(),
-                help = Hints
-            }, JsonOptions));
+                    count = response.Currencies.Count,
+                    currencies = response.Currencies.Select(c => new
+                    {
+                        code = c.Code.Value, description = c.Description, alias = GetAliasFor(c.Code, overrides)
+                    }).ToList(),
+                    help = Hints
+                }, JsonOptions));
             return;
         }
 
