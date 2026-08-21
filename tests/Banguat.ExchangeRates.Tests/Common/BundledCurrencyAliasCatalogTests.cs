@@ -33,19 +33,19 @@ public class BundledCurrencyAliasCatalogTests
     }
 
     [Fact]
-    public void GetAliases_WhenCodeKnown_ReturnsItsAliases()
+    public void GetAlias_WhenCodeKnown_ReturnsItsAlias()
     {
-        IReadOnlyList<string> aliases = _catalog.GetAliases(new CurrencyCode(2));
+        string? alias = _catalog.GetAlias(new CurrencyCode(2));
 
-        Assert.Contains("USD", aliases);
+        Assert.Equal("USD", alias);
     }
 
     [Fact]
-    public void GetAliases_WhenCodeUnknown_ReturnsEmpty()
+    public void GetAlias_WhenCodeUnknown_ReturnsNull()
     {
-        IReadOnlyList<string> aliases = _catalog.GetAliases(new CurrencyCode(999));
+        string? alias = _catalog.GetAlias(new CurrencyCode(999));
 
-        Assert.Empty(aliases);
+        Assert.Null(alias);
     }
 
     [Fact]
@@ -53,5 +53,20 @@ public class BundledCurrencyAliasCatalogTests
     {
         Assert.Contains("USD", _catalog.AllAliases);
         Assert.Contains("GTQ", _catalog.AllAliases);
+    }
+
+    [Fact]
+    public void BuildCodeToAliasIndex_WhenTwoAliasesShareACode_ThrowsInvalidOperationException()
+    {
+        Dictionary<string, CurrencyCode> aliasToCode = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["USD"] = new CurrencyCode(2),
+            ["DOLLAR"] = new CurrencyCode(2)
+        };
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+            () => BundledCurrencyAliasCatalog.BuildCodeToAliasIndex(aliasToCode));
+
+        Assert.Contains("2", exception.Message);
     }
 }

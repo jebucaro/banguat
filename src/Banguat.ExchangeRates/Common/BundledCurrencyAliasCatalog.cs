@@ -6,7 +6,7 @@ namespace Banguat.ExchangeRates.Common;
 public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
 {
     private readonly Dictionary<string, CurrencyCode> _aliasToCode;
-    private readonly Dictionary<CurrencyCode, List<string>> _codeToAliases;
+    private readonly Dictionary<CurrencyCode, string> _codeToAlias;
 
     public BundledCurrencyAliasCatalog()
     {
@@ -18,21 +18,32 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
         Dictionary<string, int> raw = JsonSerializer.Deserialize<Dictionary<string, int>>(stream)!;
 
         _aliasToCode = new Dictionary<string, CurrencyCode>(StringComparer.OrdinalIgnoreCase);
-        _codeToAliases = [];
-
         foreach ((string alias, int value) in raw)
         {
-            CurrencyCode code = new(value);
-            _aliasToCode[alias] = code;
+            _aliasToCode[alias] = new CurrencyCode(value);
+        }
 
-            if (!_codeToAliases.TryGetValue(code, out List<string>? aliases))
+        _codeToAlias = BuildCodeToAliasIndex(_aliasToCode);
+    }
+
+    internal static Dictionary<CurrencyCode, string> BuildCodeToAliasIndex(
+        IReadOnlyDictionary<string, CurrencyCode> aliasToCode)
+    {
+        Dictionary<CurrencyCode, string> codeToAlias = [];
+
+        foreach ((string alias, CurrencyCode code) in aliasToCode)
+        {
+            if (codeToAlias.TryGetValue(code, out string? existingAlias))
             {
-                aliases = [];
-                _codeToAliases[code] = aliases;
+                throw new InvalidOperationException(
+                    $"Currency code {code.Value} has more than one alias: '{existingAlias}' and '{alias}'. " +
+                    "Each currency must have exactly one alias.");
             }
 
-            aliases.Add(alias);
+            codeToAlias[code] = alias;
         }
+
+        return codeToAlias;
     }
 
     public bool TryResolve(string alias, out CurrencyCode code)
@@ -40,9 +51,9 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
         return _aliasToCode.TryGetValue(alias, out code);
     }
 
-    public IReadOnlyList<string> GetAliases(CurrencyCode code)
+    public string? GetAlias(CurrencyCode code)
     {
-        return _codeToAliases.TryGetValue(code, out List<string>? aliases) ? aliases.AsReadOnly() : [];
+        return _codeToAlias.TryGetValue(code, out string? alias) ? alias : null;
     }
 
     public IReadOnlyList<string> AllAliases => _aliasToCode.Keys.ToList();
