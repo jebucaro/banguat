@@ -25,7 +25,7 @@ public sealed class GetRateTool(IBanguatExchangeRateClient client, ICurrencyAlia
         CancellationToken cancellationToken = default)
     {
         CurrencyCode code = CurrencyArgument.Resolve(currency, aliasCatalog);
-        string? alias = aliasCatalog.GetAliases(code).FirstOrDefault();
+        string? alias = aliasCatalog.GetAlias(code);
 
         Result<GetCurrentRate.Response> result = await client.GetCurrentRateAsync(code, cancellationToken);
         if (result.IsFailure)

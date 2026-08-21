@@ -9,7 +9,7 @@ namespace Banguat.ExchangeRates.McpServer.Tools;
 [McpServerToolType]
 public sealed class GetCurrenciesTool(IBanguatExchangeRateClient client, ICurrencyAliasCatalog aliasCatalog)
 {
-    public sealed record CurrencyEntry(int Code, string Description, IReadOnlyList<string> Aliases);
+    public sealed record CurrencyEntry(int Code, string Description, string? Alias);
 
     public sealed record CurrenciesResult(int Count, IReadOnlyList<CurrencyEntry> Currencies);
 
@@ -25,7 +25,7 @@ public sealed class GetCurrenciesTool(IBanguatExchangeRateClient client, ICurren
         }
 
         List<CurrencyEntry> currencies = result.Value.Currencies
-            .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAliases(c.Code)))
+            .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAlias(c.Code)))
             .ToList();
 
         return new CurrenciesResult(currencies.Count, currencies);
