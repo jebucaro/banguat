@@ -266,6 +266,26 @@ public class RateCommandTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_WhenCodeOverriddenWithNewAlias_OldBundledAliasStillResolvesAsInput()
+    {
+        CurrencyCode usd = new(2);
+        _client.GetCurrentRateAsync(usd).Returns(
+            Result.Success(OnePoint(new DateOnly(2026, 8, 18), 7.6215m, 7.6217m)));
+        TestConsole testConsole = new TestConsole().Width(200);
+        Dictionary<string, CurrencyCode> overrides = new() { ["DOLLAR"] = new CurrencyCode(2) };
+        RateCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource(overrides))
+            {
+                Currency = "USD", Output = "json"
+            };
+
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
+
+        await _client.Received(1).GetCurrentRateAsync(usd);
+        Assert.Contains("\"currencyAlias\": \"DOLLAR\"", stdOut);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenOverrideFileMalformed_WritesError()
     {
         TestConsole testConsole = new TestConsole().Width(200);

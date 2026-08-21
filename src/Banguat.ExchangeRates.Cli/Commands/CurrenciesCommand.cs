@@ -46,17 +46,11 @@ public sealed partial class CurrenciesCommand(
             System.Console.Out.WriteLine(JsonSerializer.Serialize(new
             {
                 count = response.Currencies.Count,
-                currencies = response.Currencies.Select(c =>
+                currencies = response.Currencies.Select(c => new
                 {
-                    IReadOnlyList<string> aliases = GetAliasesFor(c.Code, overrides);
-                    object? alias = aliases.Count switch
-                    {
-                        0 => null,
-                        1 => aliases[0],
-                        _ => aliases
-                    };
-
-                    return new { code = c.Code.Value, description = c.Description, alias };
+                    code = c.Code.Value,
+                    description = c.Description,
+                    alias = GetAliasFor(c.Code, overrides)
                 }).ToList(),
                 help = Hints
             }, JsonOptions));
@@ -70,7 +64,7 @@ public sealed partial class CurrenciesCommand(
 
         foreach (GetAvailableCurrencies.CurrencyCatalogEntry entry in response.Currencies)
         {
-            string aliasText = string.Join(", ", GetAliasesFor(entry.Code, overrides));
+            string aliasText = GetAliasFor(entry.Code, overrides) ?? string.Empty;
 
             if (mode == OutputMode.Rich)
             {

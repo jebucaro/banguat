@@ -178,7 +178,7 @@ public class CurrenciesCommandTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_PlainMode_WhenCurrencyHasMultipleAliases_ListsBoth()
+    public async Task ExecuteAsync_PlainMode_WhenCurrencyHasOverride_ShowsOverrideAliasOnly()
     {
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
         TestConsole testConsole = new TestConsole().Width(200);
@@ -192,7 +192,7 @@ public class CurrenciesCommandTests
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
         Assert.Contains("DOLLAR", testConsole.Output);
-        Assert.Contains("USD", testConsole.Output);
+        Assert.DoesNotContain("USD", testConsole.Output);
     }
 
     [Fact]
