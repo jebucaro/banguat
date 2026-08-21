@@ -16,7 +16,12 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
 
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/rates/{currency}/history", HandleAsync);
+        app.MapGet("/rates/{currency}/history", HandleAsync)
+            .WithTags("Rates")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway);
     }
 
     internal static async Task<Results<Ok<RateHistoryResponse>, ProblemHttpResult>> HandleAsync(

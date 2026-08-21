@@ -13,6 +13,7 @@ builder.AddServiceDefaults();
 builder.Services.AddBanguatExchangeRates();
 builder.Services.AddApiEndpoints();
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 
 string[] allowedOrigins = builder.Configuration.GetSection("Api:AllowedOrigins").Get<string[]>() ?? [];
 

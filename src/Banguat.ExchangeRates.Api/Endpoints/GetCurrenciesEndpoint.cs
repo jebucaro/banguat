@@ -14,7 +14,10 @@ public sealed class GetCurrenciesEndpoint : IEndpoint
 
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/currencies", HandleAsync);
+        app.MapGet("/currencies", HandleAsync)
+            .WithTags("Currencies")
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway);
     }
 
     internal static async Task<Results<Ok<CurrenciesResponse>, ProblemHttpResult>> HandleAsync(
