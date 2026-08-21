@@ -8,7 +8,7 @@ namespace Banguat.ExchangeRates.Api.Endpoints;
 
 public sealed class GetCurrenciesEndpoint : IEndpoint
 {
-    public sealed record CurrencyEntry(int Code, string Description, IReadOnlyList<string> Aliases);
+    public sealed record CurrencyEntry(int Code, string Description, string? Alias);
 
     public sealed record CurrenciesResponse(int Count, IReadOnlyList<CurrencyEntry> Currencies);
 
@@ -30,7 +30,7 @@ public sealed class GetCurrenciesEndpoint : IEndpoint
         }
 
         List<CurrencyEntry> currencies = result.Value.Currencies
-            .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAliases(c.Code)))
+            .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAlias(c.Code)))
             .ToList();
 
         return TypedResults.Ok(new CurrenciesResponse(currencies.Count, currencies));
