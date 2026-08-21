@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj"/>
+        <ProjectReference Include="..\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj"/>
     </ItemGroup>
 
     <PropertyGroup>
