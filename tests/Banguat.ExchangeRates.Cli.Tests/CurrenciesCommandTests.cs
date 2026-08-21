@@ -178,7 +178,7 @@ public class CurrenciesCommandTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_PlainMode_WhenCurrencyHasMultipleAliases_ListsBoth()
+    public async Task ExecuteAsync_PlainMode_WhenCurrencyHasOverride_ShowsOverrideAliasOnly()
     {
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
         TestConsole testConsole = new TestConsole().Width(200);
@@ -192,7 +192,27 @@ public class CurrenciesCommandTests
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
         Assert.Contains("DOLLAR", testConsole.Output);
-        Assert.Contains("USD", testConsole.Output);
+        Assert.DoesNotContain("USD", testConsole.Output);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_JsonMode_WhenOverrideShadowsAnotherCurrencysBundledAlias_HidesShadowedAlias()
+    {
+        _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
+        TestConsole testConsole = new TestConsole().Width(200);
+        Dictionary<string, CurrencyCode> overrides = new() { ["USD"] = new CurrencyCode(1) };
+        CurrenciesCommand command =
+            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource(overrides))
+            {
+                Output = "json"
+            };
+
+        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
+
+        Assert.Contains("\"code\": 1", stdOut);
+        Assert.Contains("\"code\": 2", stdOut);
+        Assert.Contains("\"alias\": \"USD\"", stdOut);
+        Assert.Contains("\"alias\": null", stdOut);
     }
 
     [Fact]

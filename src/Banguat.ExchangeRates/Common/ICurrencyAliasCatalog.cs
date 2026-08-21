@@ -4,7 +4,7 @@ public interface ICurrencyAliasCatalog
 {
     bool TryResolve(string alias, out CurrencyCode code);
 
-    IReadOnlyList<string> GetAliases(CurrencyCode code);
+    string? GetAlias(CurrencyCode code);
 
     IReadOnlyList<string> AllAliases { get; }
 }

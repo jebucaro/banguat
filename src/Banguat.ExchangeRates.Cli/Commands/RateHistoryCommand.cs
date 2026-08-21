@@ -57,7 +57,7 @@ public sealed partial class RateHistoryCommand(
             return;
         }
 
-        string? currencyAlias = GetAliasesFor(currency, overrides).FirstOrDefault();
+        string? currencyAlias = GetAliasFor(currency, overrides);
 
         IReadOnlyList<RatePoint> points;
 

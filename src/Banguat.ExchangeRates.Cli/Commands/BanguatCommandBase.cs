@@ -91,16 +91,16 @@ public abstract class BanguatCommandBase(
         }
     }
 
-    protected IReadOnlyList<string> GetAliasesFor(CurrencyCode code,
-        IReadOnlyDictionary<string, CurrencyCode> overrides)
+    protected string? GetAliasFor(CurrencyCode code, IReadOnlyDictionary<string, CurrencyCode> overrides)
     {
-        IEnumerable<string> overrideAliases = overrides.Where(kvp => kvp.Value == code).Select(kvp => kvp.Key);
-        IEnumerable<string> bundledAliases =
-            aliasCatalog.GetAliases(code).Where(alias => !overrides.ContainsKey(alias));
+        string? overrideAlias = overrides.Where(kvp => kvp.Value == code).Select(kvp => kvp.Key).FirstOrDefault();
+        if (overrideAlias is not null)
+        {
+            return overrideAlias;
+        }
 
-        return overrideAliases.Concat(bundledAliases)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        string? bundledAlias = aliasCatalog.GetAlias(code);
+        return bundledAlias is not null && overrides.ContainsKey(bundledAlias) ? null : bundledAlias;
     }
 
     protected bool TryResolveCurrency(string value, OutputMode mode, out CurrencyCode currency)

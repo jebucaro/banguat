@@ -46,7 +46,16 @@ internal static class TracingDecorator
             {
                 activity?.SetStatus(ActivityStatusCode.Error, result.Error.Description);
                 activity?.SetTag("banguat.error.code", result.Error.Code);
-                logger.LogWarning(
+
+                LogLevel logLevel = result.Error.Type switch
+                {
+                    ErrorType.Validation => LogLevel.Information,
+                    ErrorType.Problem => LogLevel.Warning,
+                    _ => LogLevel.Error
+                };
+
+                logger.Log(
+                    logLevel,
                     "Completed {Operation} in {ElapsedMs}ms with error {ErrorCode}: {ErrorDescription}",
                     operationName, elapsedMs, result.Error.Code, result.Error.Description);
             }
