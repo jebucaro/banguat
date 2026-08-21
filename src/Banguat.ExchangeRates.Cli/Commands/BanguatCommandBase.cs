@@ -94,8 +94,13 @@ public abstract class BanguatCommandBase(
     protected string? GetAliasFor(CurrencyCode code, IReadOnlyDictionary<string, CurrencyCode> overrides)
     {
         string? overrideAlias = overrides.Where(kvp => kvp.Value == code).Select(kvp => kvp.Key).FirstOrDefault();
+        if (overrideAlias is not null)
+        {
+            return overrideAlias;
+        }
 
-        return overrideAlias ?? aliasCatalog.GetAlias(code);
+        string? bundledAlias = aliasCatalog.GetAlias(code);
+        return bundledAlias is not null && overrides.ContainsKey(bundledAlias) ? null : bundledAlias;
     }
 
     protected bool TryResolveCurrency(string value, OutputMode mode, out CurrencyCode currency)

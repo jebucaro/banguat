@@ -68,5 +68,7 @@ public class BundledCurrencyAliasCatalogTests
             () => BundledCurrencyAliasCatalog.BuildCodeToAliasIndex(aliasToCode));
 
         Assert.Contains("2", exception.Message);
+        Assert.Contains("USD", exception.Message);
+        Assert.Contains("DOLLAR", exception.Message);
     }
 }
