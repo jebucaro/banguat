@@ -1,4 +1,5 @@
 <Solution>
+    <Project Path="src/Banguat.ExchangeRates.Api/Banguat.ExchangeRates.Api.csproj"/>
     <Project Path="src/Banguat.ExchangeRates.Cli/Banguat.ExchangeRates.Cli.csproj"/>
     <Project Path="src/Banguat.ExchangeRates/Banguat.ExchangeRates.csproj"/>
     <Project Path="src\Banguat.ExchangeRates.AppHost\Banguat.ExchangeRates.AppHost.csproj"/>
