@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -8,19 +8,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="coverlet.collector" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="NSubstitute" />
-        <PackageReference Include="xunit" />
-        <PackageReference Include="xunit.runner.visualstudio" />
+        <PackageReference Include="coverlet.collector"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="NSubstitute"/>
+        <PackageReference Include="xunit"/>
+        <PackageReference Include="xunit.runner.visualstudio"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Xunit" />
+        <Using Include="Xunit"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj" />
+        <ProjectReference Include="..\..\src\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj"/>
     </ItemGroup>
 
 </Project>

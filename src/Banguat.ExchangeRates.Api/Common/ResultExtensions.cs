@@ -14,6 +14,6 @@ public static class ResultExtensions
             _ => StatusCodes.Status500InternalServerError
         };
 
-        return TypedResults.Problem(detail: error.Description, statusCode: statusCode, title: error.Code);
+        return TypedResults.Problem(error.Description, statusCode: statusCode, title: error.Code);
     }
 }

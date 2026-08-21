@@ -1,8 +1,8 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.4.6">
 
     <ItemGroup>
-        <ProjectReference Include="..\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj" />
-        <ProjectReference Include="..\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj" />
+        <ProjectReference Include="..\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj"/>
+        <ProjectReference Include="..\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj"/>
     </ItemGroup>
 
     <PropertyGroup>

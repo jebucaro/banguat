@@ -19,7 +19,7 @@ public static class CurrencyRouteBinder
     public static ProblemHttpResult UnknownCurrencyProblem(string currency)
     {
         return TypedResults.Problem(
-            detail: $"Unknown currency '{currency}'. Call GET /currencies to see valid codes and aliases.",
+            $"Unknown currency '{currency}'. Call GET /currencies to see valid codes and aliases.",
             statusCode: StatusCodes.Status404NotFound,
             title: "Unknown currency");
     }

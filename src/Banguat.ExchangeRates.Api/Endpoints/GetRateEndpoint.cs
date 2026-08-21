@@ -9,7 +9,12 @@ namespace Banguat.ExchangeRates.Api.Endpoints;
 public sealed class GetRateEndpoint : IEndpoint
 {
     public sealed record RateResponse(
-        int Currency, string? CurrencyAlias, DateOnly? Date, decimal? Buy, decimal? Sell, int Count);
+        int Currency,
+        string? CurrencyAlias,
+        DateOnly? Date,
+        decimal? Buy,
+        decimal? Sell,
+        int Count);
 
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

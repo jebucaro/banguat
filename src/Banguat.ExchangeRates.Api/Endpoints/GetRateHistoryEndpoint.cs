@@ -12,7 +12,10 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
     public sealed record RateHistoryPoint(DateOnly Date, decimal Buy, decimal Sell);
 
     public sealed record RateHistoryResponse(
-        int Currency, string? CurrencyAlias, int Count, IReadOnlyList<RateHistoryPoint> History);
+        int Currency,
+        string? CurrencyAlias,
+        int Count,
+        IReadOnlyList<RateHistoryPoint> History);
 
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -47,7 +50,7 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
         if (!((sinceGiven && !anyRangePartGiven) || (!sinceGiven && rangeGiven)))
         {
             return TypedResults.Problem(
-                detail: "Provide either \"since\", or both \"from\" and \"to\" (not both, not neither).",
+                "Provide either \"since\", or both \"from\" and \"to\" (not both, not neither).",
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid date range parameters");
         }
@@ -105,7 +108,7 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
     private static ProblemHttpResult InvalidDateProblem(string paramName, string value)
     {
         return TypedResults.Problem(
-            detail: $"Invalid value for \"{paramName}\": '{value}' is not a valid date. Expected format yyyy-MM-dd.",
+            $"Invalid value for \"{paramName}\": '{value}' is not a valid date. Expected format yyyy-MM-dd.",
             statusCode: StatusCodes.Status400BadRequest,
             title: "Invalid date parameter");
     }
