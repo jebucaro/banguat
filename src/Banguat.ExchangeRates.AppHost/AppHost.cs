@@ -1,6 +1,11 @@
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-builder.AddProject<Projects.Banguat_ExchangeRates_McpServer>("mcpserver");
-builder.AddProject<Projects.Banguat_ExchangeRates_Api>("api");
+var cache = builder.AddValkey("cache");
+
+builder.AddProject<Projects.Banguat_ExchangeRates_McpServer>("mcpserver")
+    .WithReference(cache);
+
+builder.AddProject<Projects.Banguat_ExchangeRates_Api>("api")
+    .WithReference(cache);
 
 builder.Build().Run();
