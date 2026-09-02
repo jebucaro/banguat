@@ -6,7 +6,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.Hosting.Valkey" />
+        <PackageReference Include="Aspire.Hosting.Valkey" />
     </ItemGroup>
 
     <PropertyGroup>

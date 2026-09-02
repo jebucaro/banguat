@@ -1,6 +1,6 @@
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-var cache = builder.AddValkey("cache");
+IResourceBuilder<ValkeyResource> cache = builder.AddValkey("cache");
 
 builder.AddProject<Projects.Banguat_ExchangeRates_McpServer>("mcpserver")
     .WithReference(cache);
