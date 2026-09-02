@@ -10,7 +10,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddBanguatExchangeRates();
+builder.AddRedisDistributedCache(connectionName: "cache");
+builder.Services.AddBanguatExchangeRates(
+    configureCaching: caching => builder.Configuration.GetSection("Caching").Bind(caching.DurationOverrides));
 builder.Services.AddApiEndpoints();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
