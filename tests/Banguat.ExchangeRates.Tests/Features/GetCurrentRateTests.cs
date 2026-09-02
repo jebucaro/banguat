@@ -99,4 +99,12 @@ public class GetCurrentRateTests
 
         Assert.Equal(18, activity!.GetTagItem("banguat.currency"));
     }
+
+    [Fact]
+    public void CacheDuration_Should_ReturnCurrentRateDefault()
+    {
+        GetCurrentRate.Query query = new(new CurrencyCode(1));
+
+        Assert.Equal(CacheDurationDefaults.CurrentRate, query.CacheDuration);
+    }
 }

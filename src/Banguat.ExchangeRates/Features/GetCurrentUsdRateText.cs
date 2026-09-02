@@ -1,13 +1,17 @@
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Soap;
 
 namespace Banguat.ExchangeRates.Features;
 
 public static class GetCurrentUsdRateText
 {
-    public sealed record Query : IQuery<Response>;
+    public sealed record Query : IQuery<Response>, ICacheableQuery
+    {
+        public TimeSpan CacheDuration => CacheDurationDefaults.CurrentRate;
+    }
 
     public sealed record Response(string Text);
 

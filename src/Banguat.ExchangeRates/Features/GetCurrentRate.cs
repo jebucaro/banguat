@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Soap;
 using Banguat.ExchangeRates.Soap.Models;
 
@@ -9,7 +10,10 @@ namespace Banguat.ExchangeRates.Features;
 
 public static class GetCurrentRate
 {
-    public sealed record Query(CurrencyCode Currency) : IQuery<Response>;
+    public sealed record Query(CurrencyCode Currency) : IQuery<Response>, ICacheableQuery
+    {
+        public TimeSpan CacheDuration => CacheDurationDefaults.CurrentRate;
+    }
 
     /// <summary>
     /// For USD, the live service returns a single reference rate rather than a bid/ask spread —
