@@ -7,16 +7,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Http"/>
-        <PackageReference Include="Scrutor"/>
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+        <PackageReference Include="Scrutor" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Common/CurrencyAliases.json"/>
+        <EmbeddedResource Include="Common/CurrencyAliases.json" />
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="Banguat.ExchangeRates.Tests"/>
+        <InternalsVisibleTo Include="Banguat.ExchangeRates.Tests" />
     </ItemGroup>
 
 </Project>
