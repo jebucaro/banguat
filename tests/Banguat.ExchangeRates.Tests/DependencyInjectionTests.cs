@@ -3,6 +3,7 @@ using Banguat.ExchangeRates.Common.Messaging;
 using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Features;
 using Banguat.ExchangeRates.Soap;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Banguat.ExchangeRates.Tests;
@@ -38,7 +39,7 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddBanguatExchangeRates_Should_WrapHandlersWithTracingDecorator()
+    public void AddBanguatExchangeRates_Should_WrapHandlersWithCachingDecorator()
     {
         ServiceCollection services = new();
         services.AddBanguatExchangeRates();
@@ -48,7 +49,7 @@ public class DependencyInjectionTests
         IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response> handler =
             provider.GetRequiredService<IQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>();
 
-        Assert.IsType<TracingDecorator.QueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>(handler);
+        Assert.IsType<CachingDecorator.QueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>>(handler);
     }
 
     [Fact]
@@ -62,5 +63,32 @@ public class DependencyInjectionTests
         ICurrencyAliasCatalog catalog = provider.GetRequiredService<ICurrencyAliasCatalog>();
 
         Assert.NotNull(catalog);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_Should_ResolveDistributedCache()
+    {
+        ServiceCollection services = new();
+        services.AddBanguatExchangeRates();
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        IDistributedCache cache = provider.GetRequiredService<IDistributedCache>();
+
+        Assert.NotNull(cache);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_Should_ApplyCachingOptions()
+    {
+        ServiceCollection services = new();
+
+        services.AddBanguatExchangeRates(
+            configureCaching: caching => caching.DurationOverrides["Test"] = TimeSpan.FromMinutes(1));
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+        CachingOptions options = provider.GetRequiredService<CachingOptions>();
+
+        Assert.Equal(TimeSpan.FromMinutes(1), options.DurationOverrides["Test"]);
     }
 }
