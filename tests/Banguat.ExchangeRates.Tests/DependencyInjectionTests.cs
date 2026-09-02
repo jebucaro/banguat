@@ -1,13 +1,18 @@
+using System.Diagnostics;
+using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
 using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Features;
 using Banguat.ExchangeRates.Soap;
+using Banguat.ExchangeRates.Tests.Diagnostics;
+using Banguat.ExchangeRates.Tests.Features;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Banguat.ExchangeRates.Tests;
 
+[Collection(ActivityListenerCollection.Name)]
 public class DependencyInjectionTests
 {
     [Fact]
@@ -90,5 +95,32 @@ public class DependencyInjectionTests
         CachingOptions options = provider.GetRequiredService<CachingOptions>();
 
         Assert.Equal(TimeSpan.FromMinutes(1), options.DurationOverrides["Test"]);
+    }
+
+    [Fact]
+    public async Task AddBanguatExchangeRates_Should_RecordTracingActivity_ThroughResolvedHandlerChain()
+    {
+        List<Activity> activities = new();
+        using ActivityListener listener = new()
+        {
+            ShouldListenTo = source => source.Name == BanguatExchangeRatesDiagnostics.ActivitySourceName,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = activities.Add
+        };
+        ActivitySource.AddActivityListener(listener);
+
+        ServiceCollection services = new();
+        services.AddBanguatExchangeRates();
+        services.AddScoped<IBanguatSoapTransport>(_ => new FakeBanguatSoapTransport(
+            Result.Failure<XDocument>(Error.Failure("Test.Fake", "fake"))));
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        IQueryHandler<GetCurrentUsdRateText.Query, GetCurrentUsdRateText.Response> handler =
+            provider.GetRequiredService<IQueryHandler<GetCurrentUsdRateText.Query, GetCurrentUsdRateText.Response>>();
+
+        await handler.Handle(new GetCurrentUsdRateText.Query(), CancellationToken.None);
+
+        Assert.Contains(activities, a => a.GetTagItem("banguat.operation") as string == "GetCurrentUsdRateText");
     }
 }

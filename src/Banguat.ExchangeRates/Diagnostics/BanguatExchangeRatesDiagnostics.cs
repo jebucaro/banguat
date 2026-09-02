@@ -22,4 +22,9 @@ public static class BanguatExchangeRatesDiagnostics
         "banguat.exchangerates.call.duration",
         "ms",
         "Duration of Banguat exchange rate SOAP operations.");
+
+    internal static readonly Counter<long> CacheLookupCount = Meter.CreateCounter<long>(
+        "banguat.exchangerates.cache.lookups",
+        "{lookup}",
+        "Number of cache lookups performed by CachingDecorator, tagged by outcome (hit/miss/error).");
 }

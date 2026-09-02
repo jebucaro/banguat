@@ -2,6 +2,7 @@ using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
 using Banguat.ExchangeRates.Diagnostics;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Banguat.ExchangeRates.Tests.Diagnostics;
@@ -16,6 +17,17 @@ public class CachingDecoratorTests
         }
 
         public sealed record UncacheableQuery : IQuery<string>;
+    }
+
+    // Distinct declaring type from Probe so operationName ("SamplingProbe") doesn't collide with the
+    // shared, process-wide CachingDecorator.LastWarningLoggedAtUtc entries other tests in this class prime
+    // for "Probe" (e.g. via ThrowingDistributedCache).
+    private static class SamplingProbe
+    {
+        public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
+        {
+            public TimeSpan CacheDuration => TimeSpan.FromMinutes(5);
+        }
     }
 
     private sealed class SucceedingCacheableHandler(string value) : IQueryHandler<Probe.CacheableQuery, string>
@@ -214,5 +226,81 @@ public class CachingDecoratorTests
         Assert.True(result.IsSuccess);
         Assert.Equal("value", result.Value);
         Assert.Equal(1, handler.CallCount);
+    }
+
+    private sealed class SucceedingSamplingProbeHandler(string value) : IQueryHandler<SamplingProbe.CacheableQuery, string>
+    {
+        public Task<Result<string>> Handle(SamplingProbe.CacheableQuery query, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Result.Success(value));
+        }
+    }
+
+    private sealed class ReadThrowingDistributedCache : IDistributedCache
+    {
+        public byte[]? Get(string key) => throw new InvalidOperationException("boom");
+
+        public Task<byte[]?> GetAsync(string key, CancellationToken token = default) =>
+            throw new InvalidOperationException("boom");
+
+        public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
+        {
+        }
+
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default) =>
+            Task.CompletedTask;
+
+        public void Refresh(string key)
+        {
+        }
+
+        public Task RefreshAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+
+        public void Remove(string key)
+        {
+        }
+
+        public Task RemoveAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+    }
+
+    private sealed class RecordingLogger : ILogger<CachingDecorator.QueryHandler<SamplingProbe.CacheableQuery, string>>
+    {
+        public List<LogLevel> LoggedLevels { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            return NullLogger.Instance.BeginScope(state);
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            LoggedLevels.Add(logLevel);
+        }
+    }
+
+    [Fact]
+    public async Task Handle_Should_SampleWarningLogs_ForRepeatedCacheReadFailures()
+    {
+        ReadThrowingDistributedCache cache = new();
+        SucceedingSamplingProbeHandler handler = new("value");
+        RecordingLogger logger = new();
+        CachingDecorator.QueryHandler<SamplingProbe.CacheableQuery, string> decorator = new(
+            handler, cache, new CachingOptions(), logger);
+
+        await decorator.Handle(new SamplingProbe.CacheableQuery(), CancellationToken.None);
+        await decorator.Handle(new SamplingProbe.CacheableQuery(), CancellationToken.None);
+
+        Assert.Equal(1, logger.LoggedLevels.Count(level => level == LogLevel.Warning));
+        Assert.Equal(1, logger.LoggedLevels.Count(level => level == LogLevel.Debug));
     }
 }

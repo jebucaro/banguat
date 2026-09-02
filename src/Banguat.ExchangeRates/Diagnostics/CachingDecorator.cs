@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
@@ -8,6 +9,9 @@ namespace Banguat.ExchangeRates.Diagnostics;
 
 internal static class CachingDecorator
 {
+    private static readonly ConcurrentDictionary<string, DateTime> LastWarningLoggedAtUtc = new();
+    private static readonly TimeSpan WarningSampleInterval = TimeSpan.FromMinutes(1);
+
     internal sealed class QueryHandler<TQuery, TResponse>(
         IQueryHandler<TQuery, TResponse> innerHandler,
         IDistributedCache cache,
@@ -49,11 +53,23 @@ internal static class CachingDecorator
             try
             {
                 byte[]? cached = await cache.GetAsync(cacheKey, cancellationToken);
-                return cached is null ? default : JsonSerializer.Deserialize<TResponse>(cached);
+                if (cached is null)
+                {
+                    BanguatExchangeRatesDiagnostics.CacheLookupCount.Add(
+                        1, new KeyValuePair<string, object?>("outcome", "miss"));
+                    return default;
+                }
+
+                TResponse? result = JsonSerializer.Deserialize<TResponse>(cached);
+                BanguatExchangeRatesDiagnostics.CacheLookupCount.Add(
+                    1, new KeyValuePair<string, object?>("outcome", "hit"));
+                return result;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                logger.LogWarning(ex, "Cache read failed for {Operation}", operationName);
+                BanguatExchangeRatesDiagnostics.CacheLookupCount.Add(
+                    1, new KeyValuePair<string, object?>("outcome", "error"));
+                LogCacheFailure(operationName, "read", ex);
                 return default;
             }
         }
@@ -70,9 +86,32 @@ internal static class CachingDecorator
                     new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = duration },
                     cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                logger.LogWarning(ex, "Cache write failed for {Operation}", operationName);
+                LogCacheFailure(operationName, "write", ex);
+            }
+        }
+
+        private void LogCacheFailure(string operationName, string operationKind, Exception ex)
+        {
+            LogCacheFailure(operationName, operationKind, ex, logger);
+        }
+
+        private static void LogCacheFailure(string operationName, string operationKind, Exception ex, ILogger logger)
+        {
+            string key = $"{operationName}:{operationKind}";
+            DateTime now = DateTime.UtcNow;
+            bool shouldWarn = !LastWarningLoggedAtUtc.TryGetValue(key, out DateTime last)
+                || now - last >= WarningSampleInterval;
+
+            if (shouldWarn)
+            {
+                LastWarningLoggedAtUtc[key] = now;
+                logger.LogWarning(ex, "Cache {OperationKind} failed for {Operation}", operationKind, operationName);
+            }
+            else
+            {
+                logger.LogDebug(ex, "Cache {OperationKind} failed for {Operation}", operationKind, operationName);
             }
         }
     }
