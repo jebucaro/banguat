@@ -2,6 +2,9 @@
     <Folder Name="/src/">
         <Project Path="src/Banguat.ExchangeRates.Gateway/Banguat.ExchangeRates.Gateway.csproj" />
     </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/Banguat.ExchangeRates.Gateway.Tests/Banguat.ExchangeRates.Gateway.Tests.csproj" />
+    </Folder>
     <Project Path="src/Banguat.ExchangeRates.Api/Banguat.ExchangeRates.Api.csproj" />
     <Project Path="src/Banguat.ExchangeRates.Cli/Banguat.ExchangeRates.Cli.csproj" />
     <Project Path="src/Banguat.ExchangeRates/Banguat.ExchangeRates.csproj" />
