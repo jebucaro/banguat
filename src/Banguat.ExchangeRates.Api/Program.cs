@@ -46,9 +46,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+RouteGroupBuilder v1 = app.MapGroup("/v1");
 foreach (IEndpoint endpoint in app.Services.GetServices<IEndpoint>())
 {
-    endpoint.MapEndpoint(app);
+    endpoint.MapEndpoint(v1);
 }
 
 app.Run();
