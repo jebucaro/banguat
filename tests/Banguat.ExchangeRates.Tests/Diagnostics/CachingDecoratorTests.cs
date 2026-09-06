@@ -71,10 +71,15 @@ public class CachingDecoratorTests
 
         public TimeSpan? LastAbsoluteExpirationRelativeToNow { get; private set; }
 
-        public byte[]? Get(string key) => _store.GetValueOrDefault(key);
+        public byte[]? Get(string key)
+        {
+            return _store.GetValueOrDefault(key);
+        }
 
-        public Task<byte[]?> GetAsync(string key, CancellationToken token = default) =>
-            Task.FromResult(_store.GetValueOrDefault(key));
+        public Task<byte[]?> GetAsync(string key, CancellationToken token = default)
+        {
+            return Task.FromResult(_store.GetValueOrDefault(key));
+        }
 
         public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
         {
@@ -83,7 +88,8 @@ public class CachingDecoratorTests
             LastAbsoluteExpirationRelativeToNow = options.AbsoluteExpirationRelativeToNow;
         }
 
-        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default)
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options,
+            CancellationToken token = default)
         {
             Set(key, value, options);
             return Task.CompletedTask;
@@ -93,9 +99,15 @@ public class CachingDecoratorTests
         {
         }
 
-        public Task RefreshAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+        public Task RefreshAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
 
-        public void Remove(string key) => _store.Remove(key);
+        public void Remove(string key)
+        {
+            _store.Remove(key);
+        }
 
         public Task RemoveAsync(string key, CancellationToken token = default)
         {
@@ -106,28 +118,44 @@ public class CachingDecoratorTests
 
     private sealed class ThrowingDistributedCache : IDistributedCache
     {
-        public byte[]? Get(string key) => throw new InvalidOperationException("boom");
-
-        public Task<byte[]?> GetAsync(string key, CancellationToken token = default) =>
+        public byte[]? Get(string key)
+        {
             throw new InvalidOperationException("boom");
+        }
 
-        public void Set(string key, byte[] value, DistributedCacheEntryOptions options) =>
+        public Task<byte[]?> GetAsync(string key, CancellationToken token = default)
+        {
             throw new InvalidOperationException("boom");
+        }
 
-        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default) =>
+        public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
+        {
             throw new InvalidOperationException("boom");
+        }
+
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options,
+            CancellationToken token = default)
+        {
+            throw new InvalidOperationException("boom");
+        }
 
         public void Refresh(string key)
         {
         }
 
-        public Task RefreshAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+        public Task RefreshAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
 
         public void Remove(string key)
         {
         }
 
-        public Task RemoveAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+        public Task RemoveAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 
     [Fact]
@@ -228,7 +256,8 @@ public class CachingDecoratorTests
         Assert.Equal(1, handler.CallCount);
     }
 
-    private sealed class SucceedingSamplingProbeHandler(string value) : IQueryHandler<SamplingProbe.CacheableQuery, string>
+    private sealed class SucceedingSamplingProbeHandler(string value)
+        : IQueryHandler<SamplingProbe.CacheableQuery, string>
     {
         public Task<Result<string>> Handle(SamplingProbe.CacheableQuery query, CancellationToken cancellationToken)
         {
@@ -238,29 +267,43 @@ public class CachingDecoratorTests
 
     private sealed class ReadThrowingDistributedCache : IDistributedCache
     {
-        public byte[]? Get(string key) => throw new InvalidOperationException("boom");
-
-        public Task<byte[]?> GetAsync(string key, CancellationToken token = default) =>
+        public byte[]? Get(string key)
+        {
             throw new InvalidOperationException("boom");
+        }
+
+        public Task<byte[]?> GetAsync(string key, CancellationToken token = default)
+        {
+            throw new InvalidOperationException("boom");
+        }
 
         public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
         {
         }
 
-        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options, CancellationToken token = default) =>
-            Task.CompletedTask;
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options,
+            CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
 
         public void Refresh(string key)
         {
         }
 
-        public Task RefreshAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+        public Task RefreshAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
 
         public void Remove(string key)
         {
         }
 
-        public Task RemoveAsync(string key, CancellationToken token = default) => Task.CompletedTask;
+        public Task RemoveAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class RecordingLogger : ILogger<CachingDecorator.QueryHandler<SamplingProbe.CacheableQuery, string>>

@@ -20,7 +20,8 @@ public class ReverseProxyConfigurationTests
         Assert.Equal(RateLimitPolicies.Api, apiRoute.RateLimiterPolicy);
         Assert.Equal("api", apiRoute.ClusterId);
         Assert.NotNull(apiRoute.Transforms);
-        Assert.Contains(apiRoute.Transforms!, t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/api");
+        Assert.Contains(apiRoute.Transforms!,
+            t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/api");
 
         ClusterConfig apiCluster = Assert.Single(config.Clusters, c => c.ClusterId == "api");
         Assert.Equal("http://api", apiCluster.Destinations!["api"].Address);
@@ -30,7 +31,8 @@ public class ReverseProxyConfigurationTests
         Assert.Equal(RateLimitPolicies.Mcp, mcpRoute.RateLimiterPolicy);
         Assert.Equal("mcp", mcpRoute.ClusterId);
         Assert.NotNull(mcpRoute.Transforms);
-        Assert.Contains(mcpRoute.Transforms!, t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/mcp");
+        Assert.Contains(mcpRoute.Transforms!,
+            t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/mcp");
 
         ClusterConfig mcpCluster = Assert.Single(config.Clusters, c => c.ClusterId == "mcp");
         Assert.Equal("http://mcpserver", mcpCluster.Destinations!["mcp"].Address);

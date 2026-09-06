@@ -12,7 +12,6 @@ string mcpDestination = builder.Configuration["Destinations:Mcp"] ?? "http://mcp
 
 builder.Services.AddReverseProxy()
     .LoadFromMemory(
-        routes:
         [
             new RouteConfig
             {
@@ -37,14 +36,13 @@ builder.Services.AddReverseProxy()
                 ]
             }
         ],
-        clusters:
         [
             new ClusterConfig
             {
                 ClusterId = "api",
                 Destinations = new Dictionary<string, DestinationConfig>
                 {
-                    ["api"] = new DestinationConfig { Address = apiDestination }
+                    ["api"] = new() { Address = apiDestination }
                 }
             },
             new ClusterConfig
@@ -52,7 +50,7 @@ builder.Services.AddReverseProxy()
                 ClusterId = "mcp",
                 Destinations = new Dictionary<string, DestinationConfig>
                 {
-                    ["mcp"] = new DestinationConfig { Address = mcpDestination }
+                    ["mcp"] = new() { Address = mcpDestination }
                 }
             }
         ])

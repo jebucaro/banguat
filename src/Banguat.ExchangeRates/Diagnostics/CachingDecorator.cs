@@ -48,7 +48,8 @@ internal static class CachingDecorator
             return result;
         }
 
-        private async Task<TResponse?> TryGetAsync(string cacheKey, string operationName, CancellationToken cancellationToken)
+        private async Task<TResponse?> TryGetAsync(string cacheKey, string operationName,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -75,7 +76,8 @@ internal static class CachingDecorator
         }
 
         private async Task TrySetAsync(
-            string cacheKey, string operationName, TResponse value, TimeSpan duration, CancellationToken cancellationToken)
+            string cacheKey, string operationName, TResponse value, TimeSpan duration,
+            CancellationToken cancellationToken)
         {
             try
             {
@@ -102,7 +104,7 @@ internal static class CachingDecorator
             string key = $"{operationName}:{operationKind}";
             DateTime now = DateTime.UtcNow;
             bool shouldWarn = !LastWarningLoggedAtUtc.TryGetValue(key, out DateTime last)
-                || now - last >= WarningSampleInterval;
+                              || now - last >= WarningSampleInterval;
 
             if (shouldWarn)
             {

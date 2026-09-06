@@ -1,13 +1,13 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.5.3">
 
     <ItemGroup>
-        <ProjectReference Include="..\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj" />
-        <ProjectReference Include="..\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj" />
-        <ProjectReference Include="..\Banguat.ExchangeRates.Gateway\Banguat.ExchangeRates.Gateway.csproj" />
+        <ProjectReference Include="..\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj"/>
+        <ProjectReference Include="..\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj"/>
+        <ProjectReference Include="..\Banguat.ExchangeRates.Gateway\Banguat.ExchangeRates.Gateway.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.Valkey" />
+        <PackageReference Include="Aspire.Hosting.Valkey"/>
     </ItemGroup>
 
     <PropertyGroup>

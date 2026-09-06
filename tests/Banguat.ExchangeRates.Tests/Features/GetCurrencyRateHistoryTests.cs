@@ -85,7 +85,8 @@ public class GetCurrencyRateHistoryTests
     [Fact]
     public void CacheDuration_Should_ReturnHistoricalRange_WhenToIsBeforeToday()
     {
-        GetCurrencyRateHistory.Query query = new(new DateOnly(2020, 1, 1), new DateOnly(2020, 1, 5), new CurrencyCode(24));
+        GetCurrencyRateHistory.Query query = new(new DateOnly(2020, 1, 1), new DateOnly(2020, 1, 5),
+            new CurrencyCode(24));
 
         Assert.Equal(CacheDurationDefaults.HistoricalRange, query.CacheDuration);
     }
