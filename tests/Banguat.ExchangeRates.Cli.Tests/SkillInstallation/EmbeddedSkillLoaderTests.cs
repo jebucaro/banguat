@@ -28,6 +28,6 @@ public class EmbeddedSkillLoaderTests
         IReadOnlyList<SkillAssetFile> files = EmbeddedSkillLoader.Load();
 
         SkillAssetFile skillMd = files.Single(f => f.RelativePath == "SKILL.md");
-        Assert.Contains("name: banguat-exchange-rates-cli", skillMd.Content);
+        Assert.Contains("name: banguat-exchange-rates", skillMd.Content);
     }
 }

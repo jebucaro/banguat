@@ -27,6 +27,13 @@ public sealed partial class SkillInstallCommand(IAnsiConsole console, string? lo
 
         IReadOnlyList<SkillAssetFile> files = EmbeddedSkillLoader.Load();
 
+        if (files.Count == 0)
+        {
+            console.MarkupLine("[red]No embedded skill files found. This build of the CLI is missing its skill content.[/]");
+            Environment.ExitCode = 1;
+            return default;
+        }
+
         foreach ((string root, string label) in ResolveRoots(scope))
         {
             InstallResult result =

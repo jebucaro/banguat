@@ -15,12 +15,14 @@ public static class EmbeddedSkillLoader
 
         foreach (string resourceName in assembly.GetManifestResourceNames())
         {
-            if (!resourceName.StartsWith(ResourcePrefix, StringComparison.Ordinal))
+            string normalizedName = resourceName.Replace('\\', '/');
+
+            if (!normalizedName.StartsWith(ResourcePrefix, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            string relativePath = resourceName[ResourcePrefix.Length..];
+            string relativePath = normalizedName[ResourcePrefix.Length..];
 
             using Stream stream = assembly.GetManifestResourceStream(resourceName)!;
             using StreamReader reader = new(stream);

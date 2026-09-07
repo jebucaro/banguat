@@ -1,5 +1,5 @@
 ---
-name: banguat-exchange-rates-cli
+name: banguat-exchange-rates
 description: Use when you need Guatemalan Quetzal exchange rates via the Banguat.ExchangeRates.Cli tool - covers listing currencies, today's rate, and rate history, including currency alias resolution and output modes. Use when the Banguat CLI binary is available but no MCP server or docs are.
 ---
 
