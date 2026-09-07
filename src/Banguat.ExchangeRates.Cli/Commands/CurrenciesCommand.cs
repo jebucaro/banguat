@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Banguat.ExchangeRates;
-using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
 using CliFx;
@@ -14,9 +13,8 @@ namespace Banguat.ExchangeRates.Cli.Commands;
 public sealed partial class CurrenciesCommand(
     IBanguatExchangeRateClient client,
     IAnsiConsole console,
-    ICurrencyAliasCatalog aliasCatalog,
-    ICurrencyOverrideSource overrideSource)
-    : BanguatCommandBase(console, aliasCatalog, overrideSource), ICommand
+    ICurrencyAliasCatalog aliasCatalog)
+    : BanguatCommandBase(console, aliasCatalog), ICommand
 {
     private static readonly string[] Hints =
     [
@@ -27,11 +25,6 @@ public sealed partial class CurrenciesCommand(
     public async ValueTask ExecuteAsync(IConsole console)
     {
         if (!TryParseOutputMode(out OutputMode mode))
-        {
-            return;
-        }
-
-        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
         {
             return;
         }
@@ -49,7 +42,7 @@ public sealed partial class CurrenciesCommand(
                     count = response.Currencies.Count,
                     currencies = response.Currencies.Select(c => new
                     {
-                        code = c.Code.Value, description = c.Description, alias = GetAliasFor(c.Code, overrides)
+                        code = c.Code.Value, description = c.Description, alias = GetAliasFor(c.Code)
                     }).ToList(),
                     help = Hints
                 }, JsonOptions));
@@ -63,7 +56,7 @@ public sealed partial class CurrenciesCommand(
 
         foreach (GetAvailableCurrencies.CurrencyCatalogEntry entry in response.Currencies)
         {
-            string aliasText = GetAliasFor(entry.Code, overrides) ?? string.Empty;
+            string aliasText = GetAliasFor(entry.Code) ?? string.Empty;
 
             if (mode == OutputMode.Rich)
             {

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Soap;
 using Banguat.ExchangeRates.Soap.Models;
 
@@ -10,7 +11,10 @@ namespace Banguat.ExchangeRates.Features;
 
 public static class GetCurrencyRateHistorySince
 {
-    public sealed record Query(DateOnly Since, CurrencyCode Currency) : IQuery<Response>;
+    public sealed record Query(DateOnly Since, CurrencyCode Currency) : IQuery<Response>, ICacheableQuery
+    {
+        public TimeSpan CacheDuration => CacheDurationDefaults.CurrentRate;
+    }
 
     public sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 

@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Features;
 
 namespace Banguat.ExchangeRates.Tests.Features;
@@ -49,5 +50,13 @@ public class GetCurrentUsdRateTextTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);
+    }
+
+    [Fact]
+    public void CacheDuration_Should_ReturnCurrentRateDefault()
+    {
+        GetCurrentUsdRateText.Query query = new();
+
+        Assert.Equal(CacheDurationDefaults.CurrentRate, query.CacheDuration);
     }
 }

@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Features;
 
 namespace Banguat.ExchangeRates.Tests.Features;
@@ -53,5 +54,13 @@ public class GetAvailableCurrenciesTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);
+    }
+
+    [Fact]
+    public void CacheDuration_Should_ReturnCatalogDefault()
+    {
+        GetAvailableCurrencies.Query query = new();
+
+        Assert.Equal(CacheDurationDefaults.Catalog, query.CacheDuration);
     }
 }

@@ -1,0 +1,41 @@
+{
+  "skill_name": "banguat-exchange-rates",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I only have a tool called `banguat-exchangerates-cli` available at /tmp/banguat-cli-bin/banguat-exchangerates-cli - no internet access, no other docs, no MCP server. Run the actual command and tell me today's buy and sell rate for US dollars against the Guatemalan Quetzal, and what date that rate is from.",
+      "expected_output": "Runs banguat-exchangerates-cli rate --currency USD (or --currency 2) --output json against the real binary, correctly parses the buy/sell/date fields from the JSON response, and reports accurate numbers back to the user without inventing values or misreading the table output.",
+      "files": [],
+      "expectations": [
+        "Ran a real command against the banguat-exchangerates-cli binary rather than fabricating a plausible-sounding answer",
+        "Used --currency USD or --currency 2 (correct currency identifier, not an invented one)",
+        "Reported the buy rate as 7.6222",
+        "Reported the sell rate as 7.6222",
+        "Reported the date as 2026-09-07"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Using only the `banguat-exchangerates-cli` tool at /tmp/banguat-cli-bin/banguat-exchangerates-cli, get me the Euro exchange rate history from 2026-09-01 to 2026-09-07 and tell me the highest and lowest buy rate in that period, and which dates they occurred on.",
+      "expected_output": "Runs banguat-exchangerates-cli rate history --from 2026-09-01 --to 2026-09-07 --currency EUR (or --currency 24) --output json against the real binary, correctly parses the history array, and correctly computes the min/max buy rate and their dates from the actual returned data rather than guessing or fabricating numbers.",
+      "files": [],
+      "expectations": [
+        "Ran a real rate history command with --from 2026-09-01 --to 2026-09-07 and --currency EUR or 24",
+        "Correctly identifies the highest buy rate as 1.1628 on 2026-09-07",
+        "Correctly identifies the lowest buy rate as 1.1596 on 2026-09-02",
+        "Does not claim data exists for 2026-09-05 or 2026-09-06 (no rate was published those dates) as if it were part of the min/max computation"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "A client wants Guatemala's official exchange rate today for Venezuelan Bolivares. Using only the `banguat-exchangerates-cli` tool at /tmp/banguat-cli-bin/banguat-exchangerates-cli, figure out how to look this up - I don't know if there's a standard code or alias you can just guess, and I recall Banguat might track more than one Venezuelan currency entry - then report today's rate for the right one.",
+      "expected_output": "Resolves to the Venezuelan Bolívar (Bolívar Soberano, Banguat code 41) either via the bundled VES alias or via currencies (which now lists more than one Venezuelan entry - codes 22 and 37 are stale historical redenominations with no bundled alias, code 41 is the live one and does have the bundled alias VES) - runs rate --currency VES (or --currency 41) --output json and reports today's rate. VES was added to CurrencyAliases.json specifically to remove the disambiguation this eval used to require; see docs/superpowers/specs/2026-08-18-exchangerates-cli-currency-aliases-design.md for the bundled-alias convention this follows.",
+      "files": [],
+      "expectations": [
+        "Resolves to currency code 41 (Bolívar Soberano) - either directly via the VES alias, or by running currencies and picking the live entry over the two stale ones (codes 22 and 37, last published 2007-12-31 and 2019-08-28)",
+        "Does not report a stale rate (code 22's 2007 data or code 37's 2019 data) as if it were today's rate",
+        "Reports a buy/sell rate of approximately 798 (798.4824) dated 2026-09-07"
+      ]
+    }
+  ]
+}

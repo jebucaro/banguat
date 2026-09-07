@@ -11,10 +11,17 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddBanguatExchangeRates(
         this IServiceCollection services,
-        Action<BanguatExchangeRateClientOptions>? configure = null)
+        Action<BanguatExchangeRateClientOptions>? configure = null,
+        Action<CachingOptions>? configureCaching = null)
     {
         BanguatExchangeRateClientOptions options = new();
         configure?.Invoke(options);
+
+        CachingOptions cachingOptions = new();
+        configureCaching?.Invoke(cachingOptions);
+        services.AddSingleton(cachingOptions);
+
+        services.AddDistributedMemoryCache();
 
         services.AddHttpClient<IBanguatSoapTransport, BanguatSoapTransport>(http =>
         {
@@ -29,6 +36,7 @@ public static class DependencyInjection
             .WithScopedLifetime());
 
         services.Decorate(typeof(IQueryHandler<,>), typeof(TracingDecorator.QueryHandler<,>));
+        services.Decorate(typeof(IQueryHandler<,>), typeof(CachingDecorator.QueryHandler<,>));
 
         services.AddScoped<IBanguatExchangeRateClient, BanguatExchangeRateClient>();
 

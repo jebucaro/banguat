@@ -10,7 +10,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddBanguatExchangeRates();
+builder.AddRedisDistributedCache("cache");
+builder.Services.AddBanguatExchangeRates(
+    configureCaching: caching => builder.Configuration.GetSection("Caching").Bind(caching.DurationOverrides));
 
 string[] allowedOrigins = builder.Configuration.GetSection("Mcp:AllowedOrigins").Get<string[]>() ?? [];
 

@@ -1,7 +1,5 @@
 using Banguat.ExchangeRates;
-using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Cli.Commands;
-using Banguat.ExchangeRates.Cli.Tests.Aliases;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
 using CliFx.Infrastructure;
@@ -48,7 +46,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Output = "plain"
             };
@@ -72,7 +70,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Output = "rich"
             };
@@ -92,7 +90,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Output = "json"
             };
@@ -112,7 +110,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource());
+            new(_client, testConsole, new BundledCurrencyAliasCatalog());
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -129,7 +127,7 @@ public class CurrenciesCommandTests
             Result.Failure<GetAvailableCurrencies.Response>(Error.Failure("Banguat.Transport", "boom")));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource());
+            new(_client, testConsole, new BundledCurrencyAliasCatalog());
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -141,7 +139,7 @@ public class CurrenciesCommandTests
     {
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Output = "xml"
             };
@@ -166,7 +164,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Output = "json"
             };
@@ -177,55 +175,4 @@ public class CurrenciesCommandTests
         Assert.Contains("\"alias\": \"USD\"", stdOut);
     }
 
-    [Fact]
-    public async Task ExecuteAsync_PlainMode_WhenCurrencyHasOverride_ShowsOverrideAliasOnly()
-    {
-        _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
-        TestConsole testConsole = new TestConsole().Width(200);
-        Dictionary<string, CurrencyCode> overrides = new() { ["DOLLAR"] = new CurrencyCode(2) };
-        CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource(overrides))
-            {
-                Output = "plain"
-            };
-
-        await command.ExecuteAsync(new FakeInMemoryConsole());
-
-        Assert.Contains("DOLLAR", testConsole.Output);
-        Assert.DoesNotContain("USD", testConsole.Output);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_JsonMode_WhenOverrideShadowsAnotherCurrencysBundledAlias_HidesShadowedAlias()
-    {
-        _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
-        TestConsole testConsole = new TestConsole().Width(200);
-        Dictionary<string, CurrencyCode> overrides = new() { ["USD"] = new CurrencyCode(1) };
-        CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource(overrides))
-            {
-                Output = "json"
-            };
-
-        string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
-
-        Assert.Contains("\"code\": 1", stdOut);
-        Assert.Contains("\"code\": 2", stdOut);
-        Assert.Contains("\"alias\": \"USD\"", stdOut);
-        Assert.Contains("\"alias\": null", stdOut);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WhenOverrideFileMalformed_WritesError()
-    {
-        _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
-        TestConsole testConsole = new TestConsole().Width(200);
-        CurrenciesCommand command = new(
-            _client, testConsole, new BundledCurrencyAliasCatalog(),
-            new ThrowingCurrencyOverrideSource("Failed to read /fake/path: invalid JSON."));
-
-        await command.ExecuteAsync(new FakeInMemoryConsole());
-
-        Assert.Contains("Failed to read /fake/path: invalid JSON.", testConsole.Output);
-    }
 }

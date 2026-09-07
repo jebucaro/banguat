@@ -10,7 +10,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddBanguatExchangeRates();
+builder.AddRedisDistributedCache("cache");
+builder.Services.AddBanguatExchangeRates(
+    configureCaching: caching => builder.Configuration.GetSection("Caching").Bind(caching.DurationOverrides));
 builder.Services.AddApiEndpoints();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
@@ -44,9 +46,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+RouteGroupBuilder v1 = app.MapGroup("/v1");
 foreach (IEndpoint endpoint in app.Services.GetServices<IEndpoint>())
 {
-    endpoint.MapEndpoint(app);
+    endpoint.MapEndpoint(v1);
 }
 
 app.Run();

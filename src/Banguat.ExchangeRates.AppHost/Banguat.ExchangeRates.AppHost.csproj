@@ -3,6 +3,11 @@
     <ItemGroup>
         <ProjectReference Include="..\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj"/>
         <ProjectReference Include="..\Banguat.ExchangeRates.Api\Banguat.ExchangeRates.Api.csproj"/>
+        <ProjectReference Include="..\Banguat.ExchangeRates.Gateway\Banguat.ExchangeRates.Gateway.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.Valkey"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -11,6 +16,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <UserSecretsId>fd0fcfec-1f17-43f3-822b-d4318c2835c9</UserSecretsId>
+        <AspireUseCliBundle>true</AspireUseCliBundle>
     </PropertyGroup>
 
 </Project>
