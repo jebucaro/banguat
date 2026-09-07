@@ -1,8 +1,6 @@
 using System.Globalization;
 using Banguat.ExchangeRates;
-using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Cli.Commands;
-using Banguat.ExchangeRates.Cli.Tests.Aliases;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
 using CliFx.Infrastructure;
@@ -47,7 +45,7 @@ public class RateHistoryCommandTests
                 [new GetCurrencyRateHistorySince.RatePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "24", Output = "plain"
             };
@@ -71,7 +69,7 @@ public class RateHistoryCommandTests
                 [new GetCurrencyRateHistory.RatePoint(to, 1.1596m, 1.1597m)])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 From = "2026-08-01", To = "2026-08-18", Currency = "24", Output = "plain"
             };
@@ -92,7 +90,7 @@ public class RateHistoryCommandTests
                 [new GetCurrencyRateHistorySince.RatePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "24", Output = "rich"
             };
@@ -113,7 +111,7 @@ public class RateHistoryCommandTests
                 [new GetCurrencyRateHistorySince.RatePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "24", Output = "json"
             };
@@ -134,7 +132,7 @@ public class RateHistoryCommandTests
             Result.Success(new GetCurrencyRateHistorySince.Response([])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01"
             };
@@ -149,7 +147,7 @@ public class RateHistoryCommandTests
     {
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", From = "2026-08-01", To = "2026-08-18"
             };
@@ -164,7 +162,7 @@ public class RateHistoryCommandTests
     {
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource());
+            new(_client, testConsole, new BundledCurrencyAliasCatalog());
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -176,7 +174,7 @@ public class RateHistoryCommandTests
     {
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "08/17/2026"
             };
@@ -195,7 +193,7 @@ public class RateHistoryCommandTests
             Result.Success(new GetCurrencyRateHistorySince.Response([])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "24", Output = "plain"
             };
@@ -215,7 +213,7 @@ public class RateHistoryCommandTests
                 [new GetCurrencyRateHistorySince.RatePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "24"
             };
@@ -234,7 +232,7 @@ public class RateHistoryCommandTests
             Result.Failure<GetCurrencyRateHistorySince.Response>(Error.Failure("Banguat.Transport", "boom")));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "24"
             };
@@ -254,7 +252,7 @@ public class RateHistoryCommandTests
                 [new GetCurrencyRateHistorySince.RatePoint(new DateOnly(2026, 8, 18), 7.6215m, 7.6217m)])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "USD", Output = "json"
             };
@@ -271,7 +269,7 @@ public class RateHistoryCommandTests
     {
         TestConsole testConsole = new TestConsole().Width(200);
         RateHistoryCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog(), new StubCurrencyOverrideSource())
+            new(_client, testConsole, new BundledCurrencyAliasCatalog())
             {
                 Since = "2026-08-01", Currency = "USSD"
             };

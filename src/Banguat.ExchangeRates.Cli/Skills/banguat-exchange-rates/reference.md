@@ -114,5 +114,5 @@ Every command fails the same way: one message plus a non-zero exit code. In `--o
 Example, an unrecognized currency in JSON mode:
 
 ```json
-{ "error": "Unknown currency 'USB'. Did you mean: USD? Run 'currencies' to see all codes, or add an alias in ~/.banguat-cli/currencies.json." }
+{ "error": "Unknown currency 'USB'. Did you mean: USD? Run 'currencies' to see all codes." }
 ```
