@@ -1,4 +1,5 @@
 using Banguat.ExchangeRates.Cli.SkillInstallation;
+using Banguat.ExchangeRates.Common;
 using CliFx;
 using CliFx.Binding;
 using CliFx.Infrastructure;
@@ -7,7 +8,8 @@ using Spectre.Console;
 namespace Banguat.ExchangeRates.Cli.Commands;
 
 [Command("skill install", Description = "Install the Banguat exchange rates skill for Claude Code.")]
-public sealed partial class SkillInstallCommand(IAnsiConsole console, string? localRoot = null, string? userRoot = null)
+public sealed partial class SkillInstallCommand(
+    IAnsiConsole console, ICurrencyAliasCatalog aliasCatalog, string? localRoot = null, string? userRoot = null)
     : ICommand
 {
     private readonly string _localRoot = localRoot ?? Directory.GetCurrentDirectory();
@@ -25,14 +27,16 @@ public sealed partial class SkillInstallCommand(IAnsiConsole console, string? lo
             return default;
         }
 
-        IReadOnlyList<SkillAssetFile> files = EmbeddedSkillLoader.Load();
+        IReadOnlyList<SkillAssetFile> staticFiles = EmbeddedSkillLoader.Load();
 
-        if (files.Count == 0)
+        if (staticFiles.Count == 0)
         {
             console.MarkupLine("[red]No embedded skill files found. This build of the CLI is missing its skill content.[/]");
             Environment.ExitCode = 1;
             return default;
         }
+
+        List<SkillAssetFile> files = [.. staticFiles, AliasTableGenerator.Generate(aliasCatalog)];
 
         foreach ((string root, string label) in ResolveRoots(scope))
         {

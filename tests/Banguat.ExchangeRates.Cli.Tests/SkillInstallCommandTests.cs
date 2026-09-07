@@ -1,4 +1,5 @@
 using Banguat.ExchangeRates.Cli.Commands;
+using Banguat.ExchangeRates.Common;
 using CliFx.Infrastructure;
 using Spectre.Console.Testing;
 
@@ -16,6 +17,9 @@ public class SkillInstallCommandTests
     private static string SkillMdPath(string root) =>
         Path.Combine(root, ".claude", "skills", "banguat-exchange-rates", "SKILL.md");
 
+    private static string KnownCurrenciesPath(string root) =>
+        Path.Combine(root, ".claude", "skills", "banguat-exchange-rates", "known-currencies.md");
+
     [Fact]
     public async Task ExecuteAsync_ScopeLocal_InstallsOnlyToLocalRoot()
     {
@@ -24,13 +28,38 @@ public class SkillInstallCommandTests
         try
         {
             TestConsole testConsole = new TestConsole().Width(200);
-            SkillInstallCommand command = new(testConsole, localRoot, userRoot) { Scope = "local" };
+            SkillInstallCommand command =
+                new(testConsole, new BundledCurrencyAliasCatalog(), localRoot, userRoot) { Scope = "local" };
 
             await command.ExecuteAsync(new FakeInMemoryConsole());
 
             Assert.True(File.Exists(SkillMdPath(localRoot)));
             Assert.False(File.Exists(SkillMdPath(userRoot)));
             Assert.Contains("./.claude/skills/banguat-exchange-rates", testConsole.Output);
+        }
+        finally
+        {
+            Directory.Delete(localRoot, recursive: true);
+            Directory.Delete(userRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_InstallsGeneratedKnownCurrenciesFileWithBundledAliases()
+    {
+        string localRoot = CreateTempDir();
+        string userRoot = CreateTempDir();
+        try
+        {
+            TestConsole testConsole = new TestConsole().Width(200);
+            SkillInstallCommand command =
+                new(testConsole, new BundledCurrencyAliasCatalog(), localRoot, userRoot) { Scope = "local" };
+
+            await command.ExecuteAsync(new FakeInMemoryConsole());
+
+            string content = File.ReadAllText(KnownCurrenciesPath(localRoot));
+            Assert.Contains("| USD | 2 |", content);
+            Assert.Contains("| VES | 41 |", content);
         }
         finally
         {
@@ -47,7 +76,8 @@ public class SkillInstallCommandTests
         try
         {
             TestConsole testConsole = new TestConsole().Width(200);
-            SkillInstallCommand command = new(testConsole, localRoot, userRoot) { Scope = "user" };
+            SkillInstallCommand command =
+                new(testConsole, new BundledCurrencyAliasCatalog(), localRoot, userRoot) { Scope = "user" };
 
             await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -70,7 +100,8 @@ public class SkillInstallCommandTests
         try
         {
             TestConsole testConsole = new TestConsole().Width(200);
-            SkillInstallCommand command = new(testConsole, localRoot, userRoot) { Scope = "both" };
+            SkillInstallCommand command =
+                new(testConsole, new BundledCurrencyAliasCatalog(), localRoot, userRoot) { Scope = "both" };
 
             await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -92,11 +123,13 @@ public class SkillInstallCommandTests
         try
         {
             TestConsole firstConsole = new TestConsole().Width(200);
-            SkillInstallCommand first = new(firstConsole, localRoot, userRoot) { Scope = "local" };
+            SkillInstallCommand first =
+                new(firstConsole, new BundledCurrencyAliasCatalog(), localRoot, userRoot) { Scope = "local" };
             await first.ExecuteAsync(new FakeInMemoryConsole());
 
             TestConsole secondConsole = new TestConsole().Width(200);
-            SkillInstallCommand second = new(secondConsole, localRoot, userRoot) { Scope = "local" };
+            SkillInstallCommand second =
+                new(secondConsole, new BundledCurrencyAliasCatalog(), localRoot, userRoot) { Scope = "local" };
             await second.ExecuteAsync(new FakeInMemoryConsole());
 
             Assert.Contains("already up to date", secondConsole.Output);
@@ -116,7 +149,8 @@ public class SkillInstallCommandTests
         try
         {
             TestConsole testConsole = new TestConsole().Width(200);
-            SkillInstallCommand command = new(testConsole, localRoot, userRoot) { Scope = "nowhere" };
+            SkillInstallCommand command =
+                new(testConsole, new BundledCurrencyAliasCatalog(), localRoot, userRoot) { Scope = "nowhere" };
 
             await command.ExecuteAsync(new FakeInMemoryConsole());
 

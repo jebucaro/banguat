@@ -22,10 +22,11 @@ Every command accepts `--output plain|rich|json` (`-o` for short); the default `
 
 ## Quick start
 
-1. If you don't already know a currency's numeric code or alias, run `currencies` first. Banguat's codes are its own numbering, not ISO 4217 - never assume a code from general knowledge, always look it up.
-2. `--currency` takes either the numeric code or a known alias, case-insensitively. Not every currency Banguat tracks has an alias - when `currencies` shows none for the one you need, use the numeric code instead.
-3. Prefer `--output json` for anything you intend to parse or report back precisely. The `rich`/`plain` table formats exist for a human reading a terminal - re-deriving buy/sell numbers by scraping ASCII table borders is the wrong way to get this data into your answer.
-4. Every failure (unknown currency, malformed date, missing required option) prints exactly one message and exits non-zero; it never throws with a stack trace for an expected failure. Check the exit code rather than guessing whether output text means success, and see `reference.md`'s Errors section for the exact shape per output mode.
+1. Check `known-currencies.md` in this skill first. It's generated straight from this build's bundled alias catalog every time `skill install` runs, so it's never stale - if the currency you need is listed there, skip straight to `rate`/`rate history` with that alias. This is almost always faster than discovering the code yourself.
+2. Only if the currency isn't in `known-currencies.md`, run `currencies` to find its numeric code. Banguat's codes are its own numbering, not ISO 4217 - never guess a code from general knowledge, always look it up. Not every currency Banguat tracks has a bundled alias; that's expected, use the numeric code for those.
+3. `--currency` takes either the numeric code or a known alias, case-insensitively.
+4. Prefer `--output json` for anything you intend to parse or report back precisely. The `rich`/`plain` table formats exist for a human reading a terminal - re-deriving buy/sell numbers by scraping ASCII table borders is the wrong way to get this data into your answer.
+5. Every failure (unknown currency, malformed date, missing required option) prints exactly one message and exits non-zero; it never throws with a stack trace for an expected failure. Check the exit code rather than guessing whether output text means success, and see `reference.md`'s Errors section for the exact shape per output mode.
 
 ## Updating this skill
 
