@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using Banguat.ExchangeRates;
-using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
 using CliFx;
@@ -16,9 +15,8 @@ namespace Banguat.ExchangeRates.Cli.Commands;
 public sealed partial class RateCommand(
     IBanguatExchangeRateClient client,
     IAnsiConsole console,
-    ICurrencyAliasCatalog aliasCatalog,
-    ICurrencyOverrideSource overrideSource)
-    : BanguatCommandBase(console, aliasCatalog, overrideSource), ICommand
+    ICurrencyAliasCatalog aliasCatalog)
+    : BanguatCommandBase(console, aliasCatalog), ICommand
 {
     [CommandOption("currency", Description = "Currency code or alias (see 'currencies'). Defaults to 2 (USD).")]
     public string Currency { get; set; } = "2";
@@ -35,12 +33,7 @@ public sealed partial class RateCommand(
             return;
         }
 
-        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
-        {
-            return;
-        }
-
-        string? currencyAlias = GetAliasFor(currency, overrides);
+        string? currencyAlias = GetAliasFor(currency);
 
         if (!TryUnwrap(await client.GetCurrentRateAsync(currency), mode, out GetCurrentRate.Response response))
         {

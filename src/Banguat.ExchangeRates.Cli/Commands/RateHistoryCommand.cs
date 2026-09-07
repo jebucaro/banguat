@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using Banguat.ExchangeRates;
-using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
 using CliFx;
@@ -19,9 +18,8 @@ internal sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 public sealed partial class RateHistoryCommand(
     IBanguatExchangeRateClient client,
     IAnsiConsole console,
-    ICurrencyAliasCatalog aliasCatalog,
-    ICurrencyOverrideSource overrideSource)
-    : BanguatCommandBase(console, aliasCatalog, overrideSource), ICommand
+    ICurrencyAliasCatalog aliasCatalog)
+    : BanguatCommandBase(console, aliasCatalog), ICommand
 {
     [CommandOption("since", Description = "Start date, format yyyy-MM-dd. Mutually exclusive with --from/--to.")]
     public string? Since { get; set; }
@@ -52,12 +50,7 @@ public sealed partial class RateHistoryCommand(
             return;
         }
 
-        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
-        {
-            return;
-        }
-
-        string? currencyAlias = GetAliasFor(currency, overrides);
+        string? currencyAlias = GetAliasFor(currency);
 
         IReadOnlyList<RatePoint> points;
 
