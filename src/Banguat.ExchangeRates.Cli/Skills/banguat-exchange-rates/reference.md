@@ -93,7 +93,7 @@ A range with no published rates in it comes back the same shape with `"count": 0
 `--currency` accepts:
 
 1. A raw Banguat numeric code (e.g. `24` for Euro).
-2. A known alias, case-insensitive (e.g. `USD`, `eur`, `Jpy`). Check `known-currencies.md` in this skill first - it's generated from the same bundled catalog this CLI actually resolves against, so it's always accurate for the build you're running. Only fall back to `currencies` if the currency isn't listed there; roughly a quarter of Banguat's currencies have no bundled alias, and there's no way to guess which in advance.
+2. A known alias, case-insensitive (e.g. `USD`, `eur`, `Jpy`). Check `known-currencies.md` in this skill first - it's generated from the exact same bundled catalog `--currency` resolves against internally, so an alias found there is certain to resolve, not something to verify against `currencies` first. Only fall back to `currencies` when the currency isn't listed there; roughly a quarter of Banguat's currencies have no bundled alias, and there's no way to guess which in advance.
 
 An unrecognized alias fails with a structured error, plus a "did you mean" suggestion when your input is close to a real alias (e.g. `--currency USB` suggests `USD`).
 
