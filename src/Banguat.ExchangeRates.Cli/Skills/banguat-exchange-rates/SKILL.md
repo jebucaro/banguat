@@ -1,26 +1,31 @@
 ---
 name: banguat-exchange-rates
-description: Use when you need Guatemalan Quetzal exchange rates via the Banguat.ExchangeRates.Cli tool - covers listing currencies, today's rate, and rate history, including currency alias resolution and output modes. Use when the Banguat CLI binary is available but no MCP server or docs are.
+description: Use this skill whenever a task needs a Guatemalan Quetzal (GTQ) exchange rate - today's buy/sell rate, historical rates over a date range, or the list of currencies Banguat (Guatemala's central bank) publishes rates for. Trigger on any mention of Banguat, Quetzal, GTQ, Guatemala's central bank, or a currency conversion/lookup involving Guatemala, even if the user doesn't name this CLI or say "exchange rate" explicitly. Use whenever the `banguat-exchangerates-cli` binary is available and no other tool (MCP server, API docs, internet access to Banguat's SOAP service) is - this skill is the only source of truth for how to drive it.
 ---
 
 # Banguat Exchange Rates CLI
 
-This CLI talks to Banguat's (Guatemala's central bank) SOAP exchange rate service. Use it when you need a currency's buy/sell rate against the Quetzal and only have the compiled CLI binary available, no MCP server, no internet access to Banguat's docs.
+`banguat-exchangerates-cli` is a command-line tool that talks to Banguat's (Guatemala's central bank) SOAP exchange-rate service. Reach for it whenever you need a currency's buy/sell rate against the Quetzal (GTQ) and this binary is the only tool available - no MCP server, no internet access to Banguat's own docs, nothing else to go on but this skill.
+
+If the binary isn't on PATH, check whether you're instead sitting in a checkout of its source repo (look for `Banguat.ExchangeRates.Cli.csproj` under `src/`) - if so, `dotnet run --project src/Banguat.ExchangeRates.Cli -- <command>` runs the exact same tool from source.
 
 ## Commands
 
-- `currencies` - list every currency Banguat publishes rates for, with its numeric code and any known alias (e.g. USD, EUR).
-- `rate --currency <id|alias>` - today's buy/sell rate. Defaults to USD (2) if `--currency` is omitted.
-- `rate history --since <yyyy-MM-dd> --currency <id|alias>` - rate history from a date to today.
-- `rate history --from <yyyy-MM-dd> --to <yyyy-MM-dd> --currency <id|alias>` - rate history over a bounded range. Mutually exclusive with `--since`.
+| Command | Purpose |
+|---|---|
+| `currencies` | List every currency Banguat publishes rates for, with its numeric code and any known alias (e.g. USD, EUR). |
+| `rate --currency <id\|alias>` | Today's buy/sell rate. Defaults to USD (`2`) if `--currency` is omitted. |
+| `rate history --since <yyyy-MM-dd> --currency <id\|alias>` | Rate history from a date to today. |
+| `rate history --from <yyyy-MM-dd> --to <yyyy-MM-dd> --currency <id\|alias>` | Rate history over a bounded range. Mutually exclusive with `--since`. |
 
-See `reference.md` in this skill for the full option reference, JSON shapes, and error format.
+Every command accepts `--output plain|rich|json` (`-o` for short); the default `rich` renders a formatted table for a human terminal. `reference.md` in this skill has the full option reference, exact JSON field shapes (including what a "no data for this date" response looks like), and the error format - read it before writing anything that parses this CLI's output, since guessing a field name wrong is the most common way to get this tool wrong.
 
 ## Quick start
 
-1. Run `currencies` first if you don't already know a currency's numeric code or alias.
-2. `--currency` accepts either the numeric Banguat code or a known alias (case-insensitive). Aliases aren't guaranteed for every currency; fall back to the numeric code from `currencies` when there isn't one.
-3. Add `--output json` to any command for machine-readable output instead of the default Rich table.
+1. If you don't already know a currency's numeric code or alias, run `currencies` first. Banguat's codes are its own numbering, not ISO 4217 - never assume a code from general knowledge, always look it up.
+2. `--currency` takes either the numeric code or a known alias, case-insensitively. Not every currency Banguat tracks has an alias - when `currencies` shows none for the one you need, use the numeric code instead.
+3. Prefer `--output json` for anything you intend to parse or report back precisely. The `rich`/`plain` table formats exist for a human reading a terminal - re-deriving buy/sell numbers by scraping ASCII table borders is the wrong way to get this data into your answer.
+4. Every failure (unknown currency, malformed date, missing required option) prints exactly one message and exits non-zero; it never throws with a stack trace for an expected failure. Check the exit code rather than guessing whether output text means success, and see `reference.md`'s Errors section for the exact shape per output mode.
 
 ## Updating this skill
 
