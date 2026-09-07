@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using Banguat.ExchangeRates.Cli.Aliases;
 using Banguat.ExchangeRates.Common;
 using CliFx.Binding;
 using Spectre.Console;
@@ -17,8 +16,7 @@ public enum OutputMode
 
 public abstract class BanguatCommandBase(
     IAnsiConsole console,
-    ICurrencyAliasCatalog aliasCatalog,
-    ICurrencyOverrideSource overrideSource)
+    ICurrencyAliasCatalog aliasCatalog)
 {
     protected static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -26,8 +24,6 @@ public abstract class BanguatCommandBase(
         WriteIndented = true,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
-
-    private IReadOnlyDictionary<string, CurrencyCode>? _overrideMapCache;
 
     [CommandOption("output", 'o', Description = "Output format: plain, rich, or json.")]
     public string Output { get; set; } = "rich";
@@ -68,39 +64,9 @@ public abstract class BanguatCommandBase(
         return false;
     }
 
-    protected bool TryLoadOverrideMap(OutputMode mode, out IReadOnlyDictionary<string, CurrencyCode> overrides)
+    protected string? GetAliasFor(CurrencyCode code)
     {
-        if (_overrideMapCache is not null)
-        {
-            overrides = _overrideMapCache;
-            return true;
-        }
-
-        try
-        {
-            _overrideMapCache =
-                new Dictionary<string, CurrencyCode>(overrideSource.Load(), StringComparer.OrdinalIgnoreCase);
-            overrides = _overrideMapCache;
-            return true;
-        }
-        catch (CurrencyOverrideLoadException ex)
-        {
-            Fail(ex.Message, mode);
-            overrides = new Dictionary<string, CurrencyCode>();
-            return false;
-        }
-    }
-
-    protected string? GetAliasFor(CurrencyCode code, IReadOnlyDictionary<string, CurrencyCode> overrides)
-    {
-        string? overrideAlias = overrides.Where(kvp => kvp.Value == code).Select(kvp => kvp.Key).FirstOrDefault();
-        if (overrideAlias is not null)
-        {
-            return overrideAlias;
-        }
-
-        string? bundledAlias = aliasCatalog.GetAlias(code);
-        return bundledAlias is not null && overrides.ContainsKey(bundledAlias) ? null : bundledAlias;
+        return aliasCatalog.GetAlias(code);
     }
 
     protected bool TryResolveCurrency(string value, OutputMode mode, out CurrencyCode currency)
@@ -111,44 +77,28 @@ public abstract class BanguatCommandBase(
             return true;
         }
 
-        if (!TryLoadOverrideMap(mode, out IReadOnlyDictionary<string, CurrencyCode> overrides))
-        {
-            currency = default;
-            return false;
-        }
-
-        if (overrides.TryGetValue(value, out currency))
-        {
-            return true;
-        }
-
         if (aliasCatalog.TryResolve(value, out currency))
         {
             return true;
         }
 
-        string? suggestion = SuggestNearestAlias(value, overrides);
+        string? suggestion = SuggestNearestAlias(value);
         string message = suggestion is null
-            ? $"Unknown currency '{value}'. Run 'currencies' to see all codes, or add an alias in " +
-              "~/.banguat-cli/currencies.json."
-            : $"Unknown currency '{value}'. Did you mean: {suggestion}? Run 'currencies' to see all codes, " +
-              "or add an alias in ~/.banguat-cli/currencies.json.";
+            ? $"Unknown currency '{value}'. Run 'currencies' to see all codes."
+            : $"Unknown currency '{value}'. Did you mean: {suggestion}? Run 'currencies' to see all codes.";
         Fail(message, mode);
         currency = default;
         return false;
     }
 
-    private string? SuggestNearestAlias(string value, IReadOnlyDictionary<string, CurrencyCode> overrides)
+    private string? SuggestNearestAlias(string value)
     {
         const int maxSuggestDistance = 2;
-
-        IEnumerable<string> candidates = overrides.Keys.Concat(aliasCatalog.AllAliases)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
 
         string? best = null;
         int bestDistance = int.MaxValue;
 
-        foreach (string candidate in candidates)
+        foreach (string candidate in aliasCatalog.AllAliases)
         {
             int distance = LevenshteinDistance(value.ToUpperInvariant(), candidate.ToUpperInvariant());
             if (distance < bestDistance)
