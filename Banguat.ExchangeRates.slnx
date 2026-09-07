@@ -1,12 +1,20 @@
 <Solution>
-    <Project Path="src/Banguat.ExchangeRates.Api/Banguat.ExchangeRates.Api.csproj"/>
-    <Project Path="src/Banguat.ExchangeRates.Cli/Banguat.ExchangeRates.Cli.csproj"/>
-    <Project Path="src/Banguat.ExchangeRates/Banguat.ExchangeRates.csproj"/>
-    <Project Path="src\Banguat.ExchangeRates.AppHost\Banguat.ExchangeRates.AppHost.csproj"/>
-    <Project Path="src\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj"/>
-    <Project Path="src\Banguat.ExchangeRates.ServiceDefaults\Banguat.ExchangeRates.ServiceDefaults.csproj"/>
-    <Project Path="tests/Banguat.ExchangeRates.Api.Tests/Banguat.ExchangeRates.Api.Tests.csproj"/>
-    <Project Path="tests/Banguat.ExchangeRates.Cli.Tests/Banguat.ExchangeRates.Cli.Tests.csproj"/>
-    <Project Path="tests/Banguat.ExchangeRates.Tests/Banguat.ExchangeRates.Tests.csproj"/>
-    <Project Path="tests\Banguat.ExchangeRates.McpServer.Tests\Banguat.ExchangeRates.McpServer.Tests.csproj"/>
+    <Folder Name="/src/">
+        <Project Path="src/Banguat.ExchangeRates.Gateway/Banguat.ExchangeRates.Gateway.csproj"/>
+        <Project Path="src/Banguat.ExchangeRates.Api/Banguat.ExchangeRates.Api.csproj"/>
+        <Project Path="src/Banguat.ExchangeRates.Cli/Banguat.ExchangeRates.Cli.csproj"/>
+        <Project Path="src/Banguat.ExchangeRates/Banguat.ExchangeRates.csproj"/>
+        <Project Path="src/Banguat.ExchangeRates.AppHost/Banguat.ExchangeRates.AppHost.csproj"/>
+        <Project Path="src/Banguat.ExchangeRates.McpServer/Banguat.ExchangeRates.McpServer.csproj"/>
+        <Project Path="src/Banguat.ExchangeRates.ServiceDefaults/Banguat.ExchangeRates.ServiceDefaults.csproj"/>
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/Banguat.ExchangeRates.Gateway.Tests/Banguat.ExchangeRates.Gateway.Tests.csproj"/>
+        <Project Path="tests/Banguat.ExchangeRates.Api.Tests/Banguat.ExchangeRates.Api.Tests.csproj"/>
+        <Project Path="tests/Banguat.ExchangeRates.Cli.Tests/Banguat.ExchangeRates.Cli.Tests.csproj"/>
+        <Project Path="tests/Banguat.ExchangeRates.Tests/Banguat.ExchangeRates.Tests.csproj"/>
+        <Project Path="tests/Banguat.ExchangeRates.McpServer.Tests/Banguat.ExchangeRates.McpServer.Tests.csproj"/>
+    </Folder>
+
+
 </Solution>

@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
+using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Features;
 using Banguat.ExchangeRates.Soap;
 
@@ -61,5 +62,13 @@ public class GetCurrencyRateHistorySinceTests
 
         Assert.True(result.IsFailure);
         Assert.Equal("Banguat.TransportFailure", result.Error.Code);
+    }
+
+    [Fact]
+    public void CacheDuration_Should_ReturnCurrentRateDefault()
+    {
+        GetCurrencyRateHistorySince.Query query = new(new DateOnly(2020, 1, 1), new CurrencyCode(24));
+
+        Assert.Equal(CacheDurationDefaults.CurrentRate, query.CacheDuration);
     }
 }
