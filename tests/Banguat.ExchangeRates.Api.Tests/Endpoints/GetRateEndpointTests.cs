@@ -26,8 +26,8 @@ public class GetRateEndpointTests
 
         Ok<GetRateEndpoint.RateResponse> ok = Assert.IsType<Ok<GetRateEndpoint.RateResponse>>(result.Result);
         Assert.Equal(2, ok.Value!.Currency);
-        Assert.Equal(1, ok.Value.Count);
         Assert.Equal(7.62157m, ok.Value.Buy);
+        Assert.Equal(7.62157m, ok.Value.Sell);
         Assert.Equal(new DateOnly(2026, 8, 18), ok.Value.Date);
         Assert.Equal("USD", ok.Value.CurrencyAlias);
     }
@@ -43,9 +43,9 @@ public class GetRateEndpointTests
             await GetRateEndpoint.HandleAsync("24", _client, _aliasCatalog, CancellationToken.None);
 
         Ok<GetRateEndpoint.RateResponse> ok = Assert.IsType<Ok<GetRateEndpoint.RateResponse>>(result.Result);
-        Assert.Equal(0, ok.Value!.Count);
-        Assert.Null(ok.Value.Date);
+        Assert.Null(ok.Value!.Date);
         Assert.Null(ok.Value.Buy);
+        Assert.Null(ok.Value.Sell);
     }
 
     [Fact]

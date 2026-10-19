@@ -8,6 +8,10 @@ namespace Banguat.ExchangeRates.Tests.Features;
 
 public class GetCurrencyRateHistoryTests
 {
+    // 2026-09-23T01:00Z is 19:00 on 2026-09-22 in Guatemala: the UTC date has already rolled over while
+    // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
+    private static readonly IRateCalendar Calendar =
+        new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
     [Fact]
     public async Task Handle_Should_ReturnRatePoints_OnSuccess()
     {
@@ -83,20 +87,29 @@ public class GetCurrencyRateHistoryTests
     }
 
     [Fact]
-    public void CacheDuration_Should_ReturnHistoricalRange_WhenToIsBeforeToday()
+    public void GetCacheDuration_Should_ReturnStableHistory_WhenRangeEndedBeforeToday()
     {
         GetCurrencyRateHistory.Query query = new(new DateOnly(2020, 1, 1), new DateOnly(2020, 1, 5),
             new CurrencyCode(24));
 
-        Assert.Equal(CacheDurationDefaults.HistoricalRange, query.CacheDuration);
+        Assert.Equal(CacheDurationDefaults.StableHistory, query.GetCacheDuration(Calendar));
     }
 
+    // Regression guard: the boundary used to be evaluated with DateTime.UtcNow, so during the final six
+    // hours of a Guatemala day a range ending today was misread as closed history and cached for 24h.
     [Fact]
-    public void CacheDuration_Should_ReturnCurrentRateDefault_WhenToIsToday()
+    public void GetCacheDuration_Should_ExpireAtNextGuatemalaDay_WhenRangeEndsToday()
     {
-        DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
-        GetCurrencyRateHistory.Query query = new(today.AddDays(-1), today, new CurrencyCode(24));
+        GetCurrencyRateHistory.Query query = new(
+            new DateOnly(2026, 9, 15), new DateOnly(2026, 9, 22), new CurrencyCode(24));
 
-        Assert.Equal(CacheDurationDefaults.CurrentRate, query.CacheDuration);
+        // At this instant the UTC date is already the 23rd while Guatemala is still on the 22nd, so the
+        // two boundaries disagree and the old comparison took the wrong branch.
+        DateOnly utcToday = DateOnly.FromDateTime(new DateTime(2026, 9, 23, 1, 0, 0, DateTimeKind.Utc));
+        Assert.True(query.To < utcToday, "the superseded UTC check classified this range as closed history");
+        Assert.False(query.To < Calendar.Today, "the Guatemala calendar sees a range that reaches today");
+
+        Assert.Equal(TimeSpan.FromHours(5), query.GetCacheDuration(Calendar));
+        Assert.NotEqual(CacheDurationDefaults.StableHistory, query.GetCacheDuration(Calendar));
     }
 }

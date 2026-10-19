@@ -14,8 +14,7 @@ public sealed class GetRateTool(IBanguatExchangeRateClient client, ICurrencyAlia
         string? CurrencyAlias,
         DateOnly? Date,
         decimal? Buy,
-        decimal? Sell,
-        int Count);
+        decimal? Sell);
 
     [McpServerTool(Name = "get_rate")]
     [Description("Gets today's buy/sell exchange rate for a currency. Defaults to USD if currency is omitted.")]
@@ -35,10 +34,10 @@ public sealed class GetRateTool(IBanguatExchangeRateClient client, ICurrencyAlia
 
         if (result.Value.Rates.Count == 0)
         {
-            return new RateResult(code.Value, alias, null, null, null, 0);
+            return new RateResult(code.Value, alias, null, null, null);
         }
 
         GetCurrentRate.RatePoint point = result.Value.Rates[0];
-        return new RateResult(code.Value, alias, point.Date, point.Buy, point.Sell, 1);
+        return new RateResult(code.Value, alias, point.Date, point.Buy, point.Sell);
     }
 }

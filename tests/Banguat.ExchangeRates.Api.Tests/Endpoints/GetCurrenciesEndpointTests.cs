@@ -34,6 +34,25 @@ public class GetCurrenciesEndpointTests
     }
 
     [Fact]
+    public async Task HandleAsync_OrdersCurrenciesByCode_SoThePayloadIsCanonical()
+    {
+        GetAvailableCurrencies.Response response = new(
+        [
+            new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(24), "Euros"),
+            new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(2), "Dólares de EE.UU."),
+            new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(1), "Quetzales")
+        ]);
+        _client.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(response));
+
+        Results<Ok<GetCurrenciesEndpoint.CurrenciesResponse>, ProblemHttpResult> result =
+            await GetCurrenciesEndpoint.HandleAsync(_client, _aliasCatalog, CancellationToken.None);
+
+        Ok<GetCurrenciesEndpoint.CurrenciesResponse> ok =
+            Assert.IsType<Ok<GetCurrenciesEndpoint.CurrenciesResponse>>(result.Result);
+        Assert.Equal([1, 2, 24], ok.Value!.Currencies.Select(c => c.Code));
+    }
+
+    [Fact]
     public async Task HandleAsync_TransportFailure_ReturnsProblem()
     {
         _client.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())

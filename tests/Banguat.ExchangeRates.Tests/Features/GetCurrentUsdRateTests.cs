@@ -7,6 +7,10 @@ namespace Banguat.ExchangeRates.Tests.Features;
 
 public class GetCurrentUsdRateTests
 {
+    // 2026-09-23T01:00Z is 19:00 on 2026-09-22 in Guatemala: the UTC date has already rolled over while
+    // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
+    private static readonly IRateCalendar Calendar =
+        new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
     private static readonly XDocument SuccessDocument = XDocument.Parse(
         """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioDiaResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><TipoCambioDiaResult><CambioDolar><VarDolar><fecha>17/08/2026</fecha><referencia>7.61992</referencia></VarDolar></CambioDolar><TotalItems>1</TotalItems></TipoCambioDiaResult></TipoCambioDiaResponse></soap:Body></soap:Envelope>""");
 
@@ -55,10 +59,10 @@ public class GetCurrentUsdRateTests
     }
 
     [Fact]
-    public void CacheDuration_Should_ReturnCurrentRateDefault()
+    public void GetCacheDuration_Should_ExpireAtNextGuatemalaDay()
     {
         GetCurrentUsdRate.Query query = new();
 
-        Assert.Equal(CacheDurationDefaults.CurrentRate, query.CacheDuration);
+        Assert.Equal(TimeSpan.FromHours(5), query.GetCacheDuration(Calendar));
     }
 }

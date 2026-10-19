@@ -24,8 +24,8 @@ public class GetRateToolTests
         GetRateTool.RateResult result = await tool.GetRateAsync("usd", CancellationToken.None);
 
         Assert.Equal(2, result.Currency);
-        Assert.Equal(1, result.Count);
         Assert.Equal(7.62157m, result.Buy);
+        Assert.Equal(7.62157m, result.Sell);
         Assert.Equal(new DateOnly(2026, 8, 18), result.Date);
         Assert.Equal("USD", result.CurrencyAlias);
     }
@@ -40,9 +40,9 @@ public class GetRateToolTests
 
         GetRateTool.RateResult result = await tool.GetRateAsync("24", CancellationToken.None);
 
-        Assert.Equal(0, result.Count);
         Assert.Null(result.Date);
         Assert.Null(result.Buy);
+        Assert.Null(result.Sell);
     }
 
     [Fact]

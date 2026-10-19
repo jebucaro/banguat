@@ -3,6 +3,7 @@ using Banguat.ExchangeRates.Common.Messaging;
 using Banguat.ExchangeRates.Diagnostics;
 using Banguat.ExchangeRates.Soap;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Scrutor;
 
 namespace Banguat.ExchangeRates;
@@ -41,6 +42,10 @@ public static class DependencyInjection
         services.AddScoped<IBanguatExchangeRateClient, BanguatExchangeRateClient>();
 
         services.AddSingleton<ICurrencyAliasCatalog, BundledCurrencyAliasCatalog>();
+
+        // TryAdd so a host (or a test) can supply its own clock before calling this method.
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<IRateCalendar, GuatemalaRateCalendar>();
 
         return services;
     }

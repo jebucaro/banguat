@@ -1,4 +1,5 @@
 using Banguat.ExchangeRates;
+using Banguat.ExchangeRates.Api.Common;
 using Banguat.ExchangeRates.Api.Endpoints;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
@@ -12,6 +13,44 @@ public class GetRateHistoryEndpointTests
 {
     private readonly IBanguatExchangeRateClient _client = Substitute.For<IBanguatExchangeRateClient>();
     private readonly ICurrencyAliasCatalog _aliasCatalog = new BundledCurrencyAliasCatalog();
+
+    // 2026-09-23T01:00Z is 19:00 on 2026-09-22 in Guatemala, so five hours of the local day remain.
+    private static readonly IRateCalendar Calendar = new GuatemalaRateCalendar(
+        new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
+
+    private static TimeSpan LifetimeFor(string queryString)
+    {
+        DefaultHttpContext context = new();
+        context.Request.QueryString = new QueryString(queryString);
+
+        return GetRateHistoryEndpoint.ResolveCacheLifetime(context, Calendar);
+    }
+
+    [Fact]
+    public void ResolveCacheLifetime_ClosedPastRange_IsStable()
+    {
+        Assert.Equal(TimeSpan.FromHours(24), LifetimeFor("?from=2020-01-01&to=2020-01-05"));
+    }
+
+    // The range reaches today, so it must be refetched after the Guatemala day rolls over even though the
+    // UTC date has already advanced.
+    [Fact]
+    public void ResolveCacheLifetime_RangeEndingToday_ExpiresAtNextGuatemalaDay()
+    {
+        Assert.Equal(TimeSpan.FromHours(5), LifetimeFor("?from=2026-09-15&to=2026-09-22"));
+    }
+
+    [Fact]
+    public void ResolveCacheLifetime_SinceForm_ExpiresAtNextGuatemalaDay()
+    {
+        Assert.Equal(TimeSpan.FromHours(5), LifetimeFor("?since=2026-09-15"));
+    }
+
+    [Fact]
+    public void ResolveCacheLifetime_MalformedTo_FallsBackToTheDailyBoundary()
+    {
+        Assert.Equal(TimeSpan.FromHours(5), LifetimeFor("?from=2026-09-15&to=not-a-date"));
+    }
 
     [Fact]
     public async Task HandleAsync_Since_ReturnsHistory()

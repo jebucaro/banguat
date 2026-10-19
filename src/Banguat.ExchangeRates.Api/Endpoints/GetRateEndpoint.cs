@@ -13,13 +13,13 @@ public sealed class GetRateEndpoint : IEndpoint
         string? CurrencyAlias,
         DateOnly? Date,
         decimal? Buy,
-        decimal? Sell,
-        int Count);
+        decimal? Sell);
 
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet("/rates/{currency}", HandleAsync)
             .WithTags("Rates")
+            .WithHttpCaching()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway);
@@ -46,10 +46,10 @@ public sealed class GetRateEndpoint : IEndpoint
 
         if (result.Value.Rates.Count == 0)
         {
-            return TypedResults.Ok(new RateResponse(code.Value, alias, null, null, null, 0));
+            return TypedResults.Ok(new RateResponse(code.Value, alias, null, null, null));
         }
 
         GetCurrentRate.RatePoint point = result.Value.Rates[0];
-        return TypedResults.Ok(new RateResponse(code.Value, alias, point.Date, point.Buy, point.Sell, 1));
+        return TypedResults.Ok(new RateResponse(code.Value, alias, point.Date, point.Buy, point.Sell));
     }
 }

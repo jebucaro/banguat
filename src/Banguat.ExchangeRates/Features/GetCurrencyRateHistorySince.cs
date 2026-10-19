@@ -13,7 +13,9 @@ public static class GetCurrencyRateHistorySince
 {
     public sealed record Query(DateOnly Since, CurrencyCode Currency) : IQuery<Response>, ICacheableQuery
     {
-        public TimeSpan CacheDuration => CacheDurationDefaults.CurrentRate;
+        // An open-ended range implicitly runs to today, so it must be refetched once the Guatemala day
+        // rolls over in order to include the newly published rate.
+        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.TimeUntilNextDay;
     }
 
     public sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);

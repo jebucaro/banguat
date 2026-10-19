@@ -45,7 +45,7 @@ public sealed partial class RateCommand(
             if (mode == OutputMode.Json)
             {
                 System.Console.Out.WriteLine(JsonSerializer.Serialize(
-                    new { currency = currency.Value, currencyAlias, count = 0 }, JsonOptions));
+                    new { currency = currency.Value, currencyAlias }, JsonOptions));
                 return;
             }
 

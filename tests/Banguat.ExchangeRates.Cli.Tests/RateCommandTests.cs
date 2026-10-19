@@ -135,7 +135,7 @@ public class RateCommandTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenNoRatesReturned_JsonMode_WritesZeroCount()
+    public async Task ExecuteAsync_WhenNoRatesReturned_JsonMode_OmitsRateFields()
     {
         CurrencyCode currency = new(24);
         _client.GetCurrentRateAsync(currency).Returns(Result.Success(new GetCurrentRate.Response([])));
@@ -149,7 +149,8 @@ public class RateCommandTests
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
         Assert.Contains("\"currency\": 24", stdOut);
-        Assert.Contains("\"count\": 0", stdOut);
+        Assert.DoesNotContain("\"buy\"", stdOut);
+        Assert.DoesNotContain("\"date\"", stdOut);
     }
 
     [Fact]

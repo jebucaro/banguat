@@ -7,6 +7,10 @@ namespace Banguat.ExchangeRates.Tests.Features;
 
 public class GetAvailableCurrenciesTests
 {
+    // 2026-09-23T01:00Z is 19:00 on 2026-09-22 in Guatemala: the UTC date has already rolled over while
+    // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
+    private static readonly IRateCalendar Calendar =
+        new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
     [Fact]
     public async Task Handle_Should_ReturnCatalog_OnSuccess()
     {
@@ -57,10 +61,10 @@ public class GetAvailableCurrenciesTests
     }
 
     [Fact]
-    public void CacheDuration_Should_ReturnCatalogDefault()
+    public void GetCacheDuration_Should_ExpireAtNextGuatemalaDay()
     {
         GetAvailableCurrencies.Query query = new();
 
-        Assert.Equal(CacheDurationDefaults.Catalog, query.CacheDuration);
+        Assert.Equal(TimeSpan.FromHours(5), query.GetCacheDuration(Calendar));
     }
 }

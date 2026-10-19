@@ -13,7 +13,8 @@ builder.AddServiceDefaults();
 builder.AddRedisDistributedCache("cache");
 builder.Services.AddBanguatExchangeRates(
     configureCaching: caching => builder.Configuration.GetSection("Caching").Bind(caching.DurationOverrides));
-builder.Services.AddApiEndpoints();
+builder.Services.AddApiEndpoints(
+    configureCaching: caching => builder.Configuration.GetSection("HttpCaching").Bind(caching));
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 

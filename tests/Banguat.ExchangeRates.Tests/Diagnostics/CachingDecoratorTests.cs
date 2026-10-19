@@ -9,11 +9,16 @@ namespace Banguat.ExchangeRates.Tests.Diagnostics;
 
 public class CachingDecoratorTests
 {
+    // The probe queries below return a fixed duration, so the decorator tests stay focused on caching
+    // behaviour rather than on calendar arithmetic (covered by GuatemalaRateCalendarTests).
+    private static readonly IRateCalendar Calendar =
+        new GuatemalaRateCalendar(new FixedTimeProvider(DateTimeOffset.UnixEpoch));
+
     private static class Probe
     {
         public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
         {
-            public TimeSpan CacheDuration => TimeSpan.FromMinutes(5);
+            public TimeSpan GetCacheDuration(IRateCalendar calendar) => TimeSpan.FromMinutes(5);
         }
 
         public sealed record UncacheableQuery : IQuery<string>;
@@ -26,7 +31,7 @@ public class CachingDecoratorTests
     {
         public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
         {
-            public TimeSpan CacheDuration => TimeSpan.FromMinutes(5);
+            public TimeSpan GetCacheDuration(IRateCalendar calendar) => TimeSpan.FromMinutes(5);
         }
     }
 
@@ -164,7 +169,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         SucceedingCacheableHandler handler = new("first");
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(),
+            handler, cache, new CachingOptions(), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         Result<string> first = await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -181,7 +186,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         SucceedingCacheableHandler handler = new("value");
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(),
+            handler, cache, new CachingOptions(), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -200,7 +205,7 @@ public class CachingDecoratorTests
             DurationOverrides = new Dictionary<string, TimeSpan> { ["Probe"] = TimeSpan.FromMinutes(30) }
         };
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, options,
+            handler, cache, options, Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -214,7 +219,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         RecordingUncacheableHandler handler = new();
         CachingDecorator.QueryHandler<Probe.UncacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(),
+            handler, cache, new CachingOptions(), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.UncacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.UncacheableQuery(), CancellationToken.None);
@@ -230,7 +235,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         FailingCacheableHandler handler = new(Error.Failure("Probe.Failed", "boom"));
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(),
+            handler, cache, new CachingOptions(), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -246,7 +251,7 @@ public class CachingDecoratorTests
         ThrowingDistributedCache cache = new();
         SucceedingCacheableHandler handler = new("value");
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(),
+            handler, cache, new CachingOptions(), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         Result<string> result = await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -338,7 +343,7 @@ public class CachingDecoratorTests
         SucceedingSamplingProbeHandler handler = new("value");
         RecordingLogger logger = new();
         CachingDecorator.QueryHandler<SamplingProbe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(), logger);
+            handler, cache, new CachingOptions(), Calendar, logger);
 
         await decorator.Handle(new SamplingProbe.CacheableQuery(), CancellationToken.None);
         await decorator.Handle(new SamplingProbe.CacheableQuery(), CancellationToken.None);

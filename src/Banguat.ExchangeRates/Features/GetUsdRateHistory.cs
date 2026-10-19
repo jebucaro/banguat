@@ -13,9 +13,9 @@ public static class GetUsdRateHistory
 {
     public sealed record Query(DateOnly From, DateOnly To) : IQuery<Response>, ICacheableQuery
     {
-        public TimeSpan CacheDuration => To < DateOnly.FromDateTime(DateTime.UtcNow)
-            ? CacheDurationDefaults.HistoricalRange
-            : CacheDurationDefaults.CurrentRate;
+        // A range that ended before today can no longer gain data points. A range that reaches today must
+        // be refetched once the Guatemala day rolls over so tomorrow picks up today's published rate.
+        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.LifetimeForRangeEnding(To);
     }
 
     public sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);

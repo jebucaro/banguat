@@ -16,6 +16,7 @@ internal static class CachingDecorator
         IQueryHandler<TQuery, TResponse> innerHandler,
         IDistributedCache cache,
         CachingOptions cachingOptions,
+        IRateCalendar calendar,
         ILogger<QueryHandler<TQuery, TResponse>> logger)
         : IQueryHandler<TQuery, TResponse>
         where TQuery : IQuery<TResponse>
@@ -41,7 +42,7 @@ internal static class CachingDecorator
             if (result.IsSuccess)
             {
                 TimeSpan duration = cachingOptions.DurationOverrides.GetValueOrDefault(
-                    operationName, cacheableQuery.CacheDuration);
+                    operationName, cacheableQuery.GetCacheDuration(calendar));
                 await TrySetAsync(cacheKey, operationName, result.Value, duration, cancellationToken);
             }
 

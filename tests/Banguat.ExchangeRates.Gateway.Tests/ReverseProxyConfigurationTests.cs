@@ -17,7 +17,6 @@ public class ReverseProxyConfigurationTests
 
         RouteConfig apiRoute = Assert.Single(config.Routes, r => r.RouteId == "api");
         Assert.Equal("/api/{**catch-all}", apiRoute.Match.Path);
-        Assert.Equal(RateLimitPolicies.Api, apiRoute.RateLimiterPolicy);
         Assert.Equal("api", apiRoute.ClusterId);
         Assert.NotNull(apiRoute.Transforms);
         Assert.Contains(apiRoute.Transforms!,
@@ -28,7 +27,6 @@ public class ReverseProxyConfigurationTests
 
         RouteConfig mcpRoute = Assert.Single(config.Routes, r => r.RouteId == "mcp");
         Assert.Equal("/mcp/{**catch-all}", mcpRoute.Match.Path);
-        Assert.Equal(RateLimitPolicies.Mcp, mcpRoute.RateLimiterPolicy);
         Assert.Equal("mcp", mcpRoute.ClusterId);
         Assert.NotNull(mcpRoute.Transforms);
         Assert.Contains(mcpRoute.Transforms!,

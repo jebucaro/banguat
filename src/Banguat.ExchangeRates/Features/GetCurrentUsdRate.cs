@@ -11,7 +11,9 @@ public static class GetCurrentUsdRate
 {
     public sealed record Query : IQuery<Response>, ICacheableQuery
     {
-        public TimeSpan CacheDuration => CacheDurationDefaults.CurrentRate;
+        // Banguat publishes at most one rate per Guatemala business day, so today's value stays valid
+        // until the local day rolls over.
+        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.TimeUntilNextDay;
     }
 
     public sealed record Response(DateOnly Date, decimal Rate);

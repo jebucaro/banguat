@@ -11,7 +11,9 @@ public static class GetAvailableCurrencies
 {
     public sealed record Query : IQuery<Response>, ICacheableQuery
     {
-        public TimeSpan CacheDuration => CacheDurationDefaults.Catalog;
+        // The catalog changes rarely, but aligning it to the same boundary as rate data keeps one expiry
+        // rule across the API and still guarantees a refresh at least once per Guatemala day.
+        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.TimeUntilNextDay;
     }
 
     public sealed record CurrencyCatalogEntry(CurrencyCode Code, string Description);
