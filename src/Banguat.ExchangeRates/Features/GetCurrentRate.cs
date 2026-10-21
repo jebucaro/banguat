@@ -14,7 +14,10 @@ public static class GetCurrentRate
     {
         // Banguat publishes at most one rate per Guatemala business day, so today's value stays valid
         // until the local day rolls over.
-        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.TimeUntilNextDay;
+        public TimeSpan GetCacheDuration(IRateCalendar calendar)
+        {
+            return calendar.TimeUntilNextDay;
+        }
     }
 
     /// <summary>
@@ -56,22 +59,38 @@ public static class GetCurrentRate
 
             if (resultElement is null)
             {
-                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("Variables"));
+                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
             }
 
             XElement? cambioDiaContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDia");
-            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
+            IReadOnlyList<SoapVar>? vars = SoapXmlParsing.ParseList(
                 cambioDiaContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
+
+            if (vars is null)
+            {
+                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
+            }
 
             if (vars.Count > 0)
             {
+                if (!SoapXmlParsing.CheckTotalItems(resultElement, vars.Count))
+                {
+                    return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
+                }
+
                 List<RatePoint> points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
                 return Result.Success(new Response(points));
             }
 
             XElement? cambioDolarContainer = resultElement.Element(BanguatSoapNamespaces.Service + "CambioDolar");
-            IReadOnlyList<SoapVarDolar> varDolars = SoapXmlParsing.ParseList(
+            IReadOnlyList<SoapVarDolar>? varDolars = SoapXmlParsing.ParseList(
                 cambioDolarContainer, BanguatSoapNamespaces.Service + "VarDolar", SoapVarDolar.FromElement);
+
+            // TotalItems counts whichever list Banguat populated, or 0 when neither is.
+            if (varDolars is null || !SoapXmlParsing.CheckTotalItems(resultElement, varDolars.Count))
+            {
+                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
+            }
 
             if (varDolars.Count > 0)
             {

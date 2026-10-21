@@ -15,14 +15,18 @@ public static class GetUsdRateHistorySince
     {
         // An open-ended range implicitly runs to today, so it must be refetched once the Guatemala day
         // rolls over in order to include the newly published rate.
-        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.TimeUntilNextDay;
+        public TimeSpan GetCacheDuration(IRateCalendar calendar)
+        {
+            return calendar.TimeUntilNextDay;
+        }
     }
 
     public sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 
     public sealed record Response(IReadOnlyList<RatePoint> Rates);
 
-    internal sealed class Handler(IBanguatSoapTransport transport) : IQueryHandler<Query, Response>
+    internal sealed class Handler(IBanguatSoapTransport transport, IRateCalendar calendar)
+        : IQueryHandler<Query, Response>
     {
         private const string OperationName = "TipoCambioFechaInicial";
 
@@ -30,6 +34,12 @@ public static class GetUsdRateHistorySince
         {
             Activity.Current?.SetTag("banguat.date.since",
                 query.Since.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            Result limits = RateHistoryLimits.Validate(query.Since, calendar.Today, calendar);
+            if (limits.IsFailure)
+            {
+                return Result.Failure<Response>(limits.Error);
+            }
 
             XElement request = new(
                 BanguatSoapNamespaces.Service + OperationName,
@@ -55,12 +65,17 @@ public static class GetUsdRateHistorySince
 
             if (resultElement is null)
             {
-                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("TipoCambioFechaInicial"));
+                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
             }
 
             XElement? varsContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Vars");
-            IReadOnlyList<SoapVar> vars = SoapXmlParsing.ParseList(
+            IReadOnlyList<SoapVar>? vars = SoapXmlParsing.ParseList(
                 varsContainer, BanguatSoapNamespaces.Service + "Var", SoapVar.FromElement);
+
+            if (vars is null || !SoapXmlParsing.CheckTotalItems(resultElement, vars.Count))
+            {
+                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
+            }
 
             List<RatePoint> points = vars.Select(v => new RatePoint(v.Fecha, v.Compra, v.Venta)).ToList();
 

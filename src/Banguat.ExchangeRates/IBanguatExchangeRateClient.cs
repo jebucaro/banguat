@@ -22,9 +22,15 @@ public interface IBanguatExchangeRateClient
     Task<Result<GetUsdRateHistory.Response>> GetUsdRateHistoryAsync(
         DateOnly from, DateOnly to, CancellationToken cancellationToken = default);
 
-    Task<Result<GetCurrencyRateHistorySince.Response>> GetCurrencyRateHistorySinceAsync(
-        DateOnly since, CurrencyCode currency, CancellationToken cancellationToken = default);
-
-    Task<Result<GetCurrencyRateHistory.Response>> GetCurrencyRateHistoryAsync(
-        DateOnly from, DateOnly to, CurrencyCode currency, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Gets a currency's rate history: pass <paramref name="since"/> alone for an open-ended range to today,
+    /// or both <paramref name="from"/> and <paramref name="to"/> for a bounded one. Any other combination
+    /// fails with <c>Banguat.InvalidHistoryRange</c>.
+    /// </summary>
+    Task<Result<GetRateHistory.Response>> GetRateHistoryAsync(
+        CurrencyCode currency,
+        DateOnly? since = null,
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken cancellationToken = default);
 }

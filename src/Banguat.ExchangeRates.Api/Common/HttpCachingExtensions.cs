@@ -21,6 +21,8 @@ internal static class HttpCachingExtensions
     /// <summary>
     /// Caches until the next Guatemala day, for endpoints whose representation always reflects today.
     /// </summary>
-    internal static RouteHandlerBuilder WithHttpCaching(this RouteHandlerBuilder builder) =>
-        builder.WithHttpCaching(static (_, calendar) => calendar.TimeUntilNextDay);
+    internal static RouteHandlerBuilder WithHttpCaching(this RouteHandlerBuilder builder)
+    {
+        return builder.WithHttpCaching(static (_, calendar) => calendar.TimeUntilNextDay);
+    }
 }

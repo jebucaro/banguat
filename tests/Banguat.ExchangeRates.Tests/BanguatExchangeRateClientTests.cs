@@ -90,41 +90,34 @@ public class BanguatExchangeRateClientTests
     }
 
     [Fact]
-    public async Task GetCurrencyRateHistorySinceAsync_Should_DelegateToHandler_WithDateAndCurrency()
+    public async Task GetRateHistoryAsync_Should_DelegateToHandler_WithSince()
     {
-        Result<GetCurrencyRateHistorySince.Response> expected =
-            Result.Success(new GetCurrencyRateHistorySince.Response([]));
-        RecordingQueryHandler<GetCurrencyRateHistorySince.Query, GetCurrencyRateHistorySince.Response> handler =
-            new(
-                expected);
-        IBanguatExchangeRateClient client = CreateClient(getCurrencyRateHistorySince: handler);
+        Result<GetRateHistory.Response> expected = Result.Success(new GetRateHistory.Response([]));
+        RecordingQueryHandler<GetRateHistory.Query, GetRateHistory.Response> handler = new(expected);
+        IBanguatExchangeRateClient client = CreateClient(getRateHistory: handler);
         DateOnly since = new(2026, 8, 1);
         CurrencyCode currency = new(18);
 
-        Result<GetCurrencyRateHistorySince.Response> result =
-            await client.GetCurrencyRateHistorySinceAsync(since, currency);
+        Result<GetRateHistory.Response> result = await client.GetRateHistoryAsync(currency, since);
 
         Assert.Same(expected, result);
-        Assert.Equal(since, handler.LastQuery!.Since);
-        Assert.Equal(currency, handler.LastQuery!.Currency);
+        Assert.Equal(new GetRateHistory.Query(currency, since), handler.LastQuery);
     }
 
     [Fact]
-    public async Task GetCurrencyRateHistoryAsync_Should_DelegateToHandler_WithDateRangeAndCurrency()
+    public async Task GetRateHistoryAsync_Should_DelegateToHandler_WithDateRange()
     {
-        Result<GetCurrencyRateHistory.Response> expected = Result.Success(new GetCurrencyRateHistory.Response([]));
-        RecordingQueryHandler<GetCurrencyRateHistory.Query, GetCurrencyRateHistory.Response> handler = new(expected);
-        IBanguatExchangeRateClient client = CreateClient(getCurrencyRateHistory: handler);
+        Result<GetRateHistory.Response> expected = Result.Success(new GetRateHistory.Response([]));
+        RecordingQueryHandler<GetRateHistory.Query, GetRateHistory.Response> handler = new(expected);
+        IBanguatExchangeRateClient client = CreateClient(getRateHistory: handler);
         DateOnly from = new(2026, 8, 1);
         DateOnly to = new(2026, 8, 5);
         CurrencyCode currency = new(18);
 
-        Result<GetCurrencyRateHistory.Response> result = await client.GetCurrencyRateHistoryAsync(from, to, currency);
+        Result<GetRateHistory.Response> result = await client.GetRateHistoryAsync(currency, from: from, to: to);
 
         Assert.Same(expected, result);
-        Assert.Equal(from, handler.LastQuery!.From);
-        Assert.Equal(to, handler.LastQuery!.To);
-        Assert.Equal(currency, handler.LastQuery!.Currency);
+        Assert.Equal(new GetRateHistory.Query(currency, From: from, To: to), handler.LastQuery);
     }
 
     private static BanguatExchangeRateClient CreateClient(
@@ -137,10 +130,7 @@ public class BanguatExchangeRateClientTests
         RecordingQueryHandler<GetUsdRateHistorySince.Query, GetUsdRateHistorySince.Response>? getUsdRateHistorySince =
             null,
         RecordingQueryHandler<GetUsdRateHistory.Query, GetUsdRateHistory.Response>? getUsdRateHistory = null,
-        RecordingQueryHandler<GetCurrencyRateHistorySince.Query, GetCurrencyRateHistorySince.Response>?
-            getCurrencyRateHistorySince = null,
-        RecordingQueryHandler<GetCurrencyRateHistory.Query, GetCurrencyRateHistory.Response>? getCurrencyRateHistory =
-            null)
+        RecordingQueryHandler<GetRateHistory.Query, GetRateHistory.Response>? getRateHistory = null)
     {
         return new BanguatExchangeRateClient(
             getCurrentUsdRate ?? new RecordingQueryHandler<GetCurrentUsdRate.Query, GetCurrentUsdRate.Response>(
@@ -158,11 +148,7 @@ public class BanguatExchangeRateClientTests
                 Result.Success(new GetUsdRateHistorySince.Response([]))),
             getUsdRateHistory ?? new RecordingQueryHandler<GetUsdRateHistory.Query, GetUsdRateHistory.Response>(
                 Result.Success(new GetUsdRateHistory.Response([]))),
-            getCurrencyRateHistorySince ??
-            new RecordingQueryHandler<GetCurrencyRateHistorySince.Query, GetCurrencyRateHistorySince.Response>(
-                Result.Success(new GetCurrencyRateHistorySince.Response([]))),
-            getCurrencyRateHistory ??
-            new RecordingQueryHandler<GetCurrencyRateHistory.Query, GetCurrencyRateHistory.Response>(
-                Result.Success(new GetCurrencyRateHistory.Response([]))));
+            getRateHistory ?? new RecordingQueryHandler<GetRateHistory.Query, GetRateHistory.Response>(
+                Result.Success(new GetRateHistory.Response([]))));
     }
 }

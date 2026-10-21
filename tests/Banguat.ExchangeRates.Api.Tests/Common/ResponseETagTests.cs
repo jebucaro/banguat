@@ -5,7 +5,10 @@ namespace Banguat.ExchangeRates.Api.Tests.Common;
 
 public class ResponseETagTests
 {
-    private static string Compute(string payload) => ResponseETag.Compute(Encoding.UTF8.GetBytes(payload));
+    private static string Compute(string payload)
+    {
+        return ResponseETag.Compute(Encoding.UTF8.GetBytes(payload));
+    }
 
     [Fact]
     public void Compute_IsStableAcrossCalls()

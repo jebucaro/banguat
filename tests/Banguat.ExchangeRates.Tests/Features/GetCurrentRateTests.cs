@@ -15,6 +15,7 @@ public class GetCurrentRateTests
     // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
     private static readonly IRateCalendar Calendar =
         new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
+
     [Fact]
     public async Task Handle_Should_ReturnBuySell_ForCambioDiaShape()
     {
@@ -72,7 +73,7 @@ public class GetCurrentRateTests
     public async Task Handle_Should_PropagateTransportFailure()
     {
         FakeBanguatSoapTransport transport = new(
-            Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
+            Result.Failure<XDocument>(BanguatErrors.TransportFailure()));
         GetCurrentRate.Handler handler = new(transport);
 
         Result<GetCurrentRate.Response> result = await handler.Handle(
@@ -110,5 +111,50 @@ public class GetCurrentRateTests
         GetCurrentRate.Query query = new(new CurrencyCode(1));
 
         Assert.Equal(TimeSpan.FromHours(5), query.GetCacheDuration(Calendar));
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnUnexpectedShape_WhenARowHasEmptyVenta()
+    {
+        XDocument document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesResult><CambioDia><Var><moneda>18</moneda><fecha>17/08/2026</fecha><venta></venta><compra>17.0241</compra></Var></CambioDia><TotalItems>1</TotalItems></VariablesResult></VariablesResponse></soap:Body></soap:Envelope>""");
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetCurrentRate.Handler handler = new(transport);
+
+        Result<GetCurrentRate.Response> result = await handler.Handle(
+            new GetCurrentRate.Query(new CurrencyCode(18)), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnUnexpectedShape_WhenTotalItemsExceedsRows()
+    {
+        XDocument document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesResult><CambioDia><Var><moneda>18</moneda><fecha>17/08/2026</fecha><venta>17.0271</venta><compra>17.0241</compra></Var></CambioDia><TotalItems>6</TotalItems></VariablesResult></VariablesResponse></soap:Body></soap:Envelope>""");
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetCurrentRate.Handler handler = new(transport);
+
+        Result<GetCurrentRate.Response> result = await handler.Handle(
+            new GetCurrentRate.Query(new CurrencyCode(18)), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnUnexpectedShape_WhenVariablesResultMissing()
+    {
+        XDocument document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesResponse xmlns="http://www.banguat.gob.gt/variables/ws/" /></soap:Body></soap:Envelope>""");
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetCurrentRate.Handler handler = new(transport);
+
+        Result<GetCurrentRate.Response> result = await handler.Handle(
+            new GetCurrentRate.Query(new CurrencyCode(18)), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
     }
 }

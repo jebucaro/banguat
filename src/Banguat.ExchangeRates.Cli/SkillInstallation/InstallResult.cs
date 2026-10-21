@@ -21,11 +21,23 @@ public sealed class InstallResult
 
     public bool HasFailures => _failed.Count > 0;
 
-    internal void RecordWritten(string relativePath) => _written.Add(relativePath);
+    internal void RecordWritten(string relativePath)
+    {
+        _written.Add(relativePath);
+    }
 
-    internal void RecordUpdated(string relativePath) => _updated.Add(relativePath);
+    internal void RecordUpdated(string relativePath)
+    {
+        _updated.Add(relativePath);
+    }
 
-    internal void RecordSkipped(string relativePath) => _skipped.Add(relativePath);
+    internal void RecordSkipped(string relativePath)
+    {
+        _skipped.Add(relativePath);
+    }
 
-    internal void RecordFailed(string relativePath, string message) => _failed.Add(new SkillFileFailure(relativePath, message));
+    internal void RecordFailed(string relativePath, string message)
+    {
+        _failed.Add(new SkillFileFailure(relativePath, message));
+    }
 }

@@ -46,10 +46,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Output = "plain"
-            };
+            new(_client, testConsole, new BundledCurrencyAliasCatalog()) { Output = "plain" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -70,10 +67,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Output = "rich"
-            };
+            new(_client, testConsole, new BundledCurrencyAliasCatalog()) { Output = "rich" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -90,10 +84,7 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(OneCurrency()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Output = "json"
-            };
+            new(_client, testConsole, new BundledCurrencyAliasCatalog()) { Output = "json" };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -139,10 +130,7 @@ public class CurrenciesCommandTests
     {
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Output = "xml"
-            };
+            new(_client, testConsole, new BundledCurrencyAliasCatalog()) { Output = "xml" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -164,15 +152,11 @@ public class CurrenciesCommandTests
         _client.GetAvailableCurrenciesAsync().Returns(Result.Success(TwoCurrencies()));
         TestConsole testConsole = new TestConsole().Width(200);
         CurrenciesCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Output = "json"
-            };
+            new(_client, testConsole, new BundledCurrencyAliasCatalog()) { Output = "json" };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
         Assert.Contains("\"alias\": \"GTQ\"", stdOut);
         Assert.Contains("\"alias\": \"USD\"", stdOut);
     }
-
 }

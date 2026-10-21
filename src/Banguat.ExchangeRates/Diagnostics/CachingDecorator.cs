@@ -4,10 +4,11 @@ using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Common.Messaging;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Banguat.ExchangeRates.Diagnostics;
 
-internal static class CachingDecorator
+internal static partial class CachingDecorator
 {
     private static readonly ConcurrentDictionary<string, DateTime> LastWarningLoggedAtUtc = new();
     private static readonly TimeSpan WarningSampleInterval = TimeSpan.FromMinutes(1);
@@ -15,7 +16,7 @@ internal static class CachingDecorator
     internal sealed class QueryHandler<TQuery, TResponse>(
         IQueryHandler<TQuery, TResponse> innerHandler,
         IDistributedCache cache,
-        CachingOptions cachingOptions,
+        IOptions<CachingOptions> cachingOptions,
         IRateCalendar calendar,
         ILogger<QueryHandler<TQuery, TResponse>> logger)
         : IQueryHandler<TQuery, TResponse>
@@ -41,9 +42,14 @@ internal static class CachingDecorator
 
             if (result.IsSuccess)
             {
-                TimeSpan duration = cachingOptions.DurationOverrides.GetValueOrDefault(
+                TimeSpan duration = cachingOptions.Value.DurationOverrides.GetValueOrDefault(
                     operationName, cacheableQuery.GetCacheDuration(calendar));
-                await TrySetAsync(cacheKey, operationName, result.Value, duration, cancellationToken);
+
+                // A zero (or negative) duration is how an operator turns caching off for one operation.
+                if (duration > TimeSpan.Zero)
+                {
+                    await TrySetAsync(cacheKey, operationName, result.Value, duration, cancellationToken);
+                }
             }
 
             return result;
@@ -67,7 +73,8 @@ internal static class CachingDecorator
                     1, new KeyValuePair<string, object?>("outcome", "hit"));
                 return result;
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            // A cache backend's own timeout surfaces as a cancellation too; only the caller's cancellation propagates.
+            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
                 BanguatExchangeRatesDiagnostics.CacheLookupCount.Add(
                     1, new KeyValuePair<string, object?>("outcome", "error"));
@@ -89,7 +96,7 @@ internal static class CachingDecorator
                     new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = duration },
                     cancellationToken);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
                 LogCacheFailure(operationName, "write", ex);
             }
@@ -110,12 +117,19 @@ internal static class CachingDecorator
             if (shouldWarn)
             {
                 LastWarningLoggedAtUtc[key] = now;
-                logger.LogWarning(ex, "Cache {OperationKind} failed for {Operation}", operationKind, operationName);
+                Log.CacheFailed(logger, LogLevel.Warning, ex, operationKind, operationName);
             }
             else
             {
-                logger.LogDebug(ex, "Cache {OperationKind} failed for {Operation}", operationKind, operationName);
+                Log.CacheFailed(logger, LogLevel.Debug, ex, operationKind, operationName);
             }
         }
+    }
+
+    private static partial class Log
+    {
+        [LoggerMessage("Cache {OperationKind} failed for {Operation}")]
+        public static partial void CacheFailed(
+            ILogger logger, LogLevel level, Exception ex, string operationKind, string operation);
     }
 }

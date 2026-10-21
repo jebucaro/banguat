@@ -18,7 +18,9 @@ public sealed class GetCurrenciesEndpoint : IEndpoint
             .WithTags("Currencies")
             .WithHttpCaching()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .ProducesProblem(StatusCodes.Status502BadGateway);
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
     }
 
     internal static async Task<Results<Ok<CurrenciesResponse>, ProblemHttpResult>> HandleAsync(

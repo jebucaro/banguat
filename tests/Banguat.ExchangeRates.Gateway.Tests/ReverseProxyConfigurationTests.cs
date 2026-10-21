@@ -23,7 +23,7 @@ public class ReverseProxyConfigurationTests
             t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/api");
 
         ClusterConfig apiCluster = Assert.Single(config.Clusters, c => c.ClusterId == "api");
-        Assert.Equal("http://api", apiCluster.Destinations!["api"].Address);
+        Assert.Equal("https+http://api", apiCluster.Destinations!["api"].Address);
 
         RouteConfig mcpRoute = Assert.Single(config.Routes, r => r.RouteId == "mcp");
         Assert.Equal("/mcp/{**catch-all}", mcpRoute.Match.Path);
@@ -33,6 +33,6 @@ public class ReverseProxyConfigurationTests
             t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/mcp");
 
         ClusterConfig mcpCluster = Assert.Single(config.Clusters, c => c.ClusterId == "mcp");
-        Assert.Equal("http://mcpserver", mcpCluster.Destinations!["mcp"].Address);
+        Assert.Equal("https+http://mcpserver", mcpCluster.Destinations!["mcp"].Address);
     }
 }

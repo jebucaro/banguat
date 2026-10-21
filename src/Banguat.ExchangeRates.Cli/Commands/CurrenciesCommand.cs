@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
@@ -36,51 +35,29 @@ public sealed partial class CurrenciesCommand(
 
         if (mode == OutputMode.Json)
         {
-            System.Console.Out.WriteLine(JsonSerializer.Serialize(
-                new
+            await WriteJsonAsync(new
+            {
+                count = response.Currencies.Count,
+                currencies = response.Currencies.Select(c => new
                 {
-                    count = response.Currencies.Count,
-                    currencies = response.Currencies.Select(c => new
-                    {
-                        code = c.Code.Value, description = c.Description, alias = GetAliasFor(c.Code)
-                    }).ToList(),
-                    help = Hints
-                }, JsonOptions));
+                    code = c.Code.Value, description = c.Description, alias = GetAliasFor(c.Code)
+                }).ToList(),
+                help = Hints
+            });
             return;
         }
 
-        Table table = new Table().Border(mode == OutputMode.Rich ? TableBorder.Rounded : TableBorder.None);
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Code[/]" : "code"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Description[/]" : "description"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Alias[/]" : "alias"));
-
+        Table table = CreateTable(mode, ("Code", "code"), ("Description", "description"), ("Alias", "alias"));
         foreach (GetAvailableCurrencies.CurrencyCatalogEntry entry in response.Currencies)
         {
-            string aliasText = GetAliasFor(entry.Code) ?? string.Empty;
-
-            if (mode == OutputMode.Rich)
-            {
-                table.AddRow(
-                    new Markup($"[yellow]{entry.Code}[/]"),
-                    new Text(entry.Description),
-                    new Markup($"[grey]{Markup.Escape(aliasText)}[/]"));
-            }
-            else
-            {
-                table.AddRow(new Text(entry.Code.ToString()), new Text(entry.Description), new Text(aliasText));
-            }
+            AddRow(table, mode,
+                (entry.Code.ToString(), "yellow"),
+                (entry.Description, null),
+                (GetAliasFor(entry.Code) ?? string.Empty, "grey"));
         }
 
         Console.Write(table);
-
-        if (mode == OutputMode.Rich)
-        {
-            Console.MarkupLine($"[grey]Showing {response.Currencies.Count} currencies[/]");
-        }
-        else
-        {
-            Console.WriteLine($"# count: {response.Currencies.Count}");
-        }
+        WriteCount(response.Currencies.Count, "currencies", mode);
 
         WriteNextSteps(Hints, mode);
     }

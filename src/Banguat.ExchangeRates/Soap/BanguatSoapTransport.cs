@@ -1,14 +1,19 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Diagnostics;
+using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Timeout;
 
 namespace Banguat.ExchangeRates.Soap;
 
-internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoapTransport
+internal sealed class BanguatSoapTransport(HttpClient httpClient, ILogger<BanguatSoapTransport> logger)
+    : IBanguatSoapTransport
 {
     public async Task<Result<XDocument>> InvokeAsync(
         string operationName,
@@ -35,21 +40,41 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
         request.Headers.Add("SOAPAction", $"\"{BanguatSoapNamespaces.SoapActionBase}{operationName}\"");
 
         string body;
+        HttpStatusCode statusCode;
+        HttpResponseMessage? response = null;
         try
         {
-            HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken);
-            activity?.SetTag("http.response.status_code", (int)response.StatusCode);
+            response = await httpClient.SendAsync(request, cancellationToken);
+            statusCode = response.StatusCode;
+            activity?.SetTag("http.response.status_code", (int)statusCode);
             body = await response.Content.ReadAsStringAsync(cancellationToken);
         }
-        catch (HttpRequestException ex)
+        catch (TimeoutRejectedException ex)
         {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            return Result.Failure<XDocument>(BanguatErrors.TransportFailure(ex.Message));
+            return Fail(activity, operationName, BanguatErrors.Timeout(), ex.Message, ex);
+        }
+        catch (ExecutionRejectedException ex)
+        {
+            // Any other rejection from the resilience pipeline (e.g. an open circuit) means no request was sent.
+            return Fail(activity, operationName, BanguatErrors.Unavailable(), ex.Message, ex);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            return Result.Failure<XDocument>(BanguatErrors.TransportFailure(ex.Message));
+            return Fail(activity, operationName, BanguatErrors.Timeout(), ex.Message, ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            return Fail(activity, operationName, BanguatErrors.TransportFailure(), ex.Message, ex);
+        }
+        catch (InvalidOperationException ex) when (response is not null)
+        {
+            // ReadAsStringAsync throws this when the response declares a charset it can't decode. Before a response
+            // exists it means a bad request setup, which is a bug for the host's error handling, not an upstream state.
+            return Fail(activity, operationName, BanguatErrors.TransportFailure(), ex.Message, ex);
+        }
+        finally
+        {
+            response?.Dispose();
         }
 
         activity?.SetTag("banguat.soap.response.bytes", Encoding.UTF8.GetByteCount(body));
@@ -61,11 +86,11 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
         }
         catch (XmlException ex)
         {
-            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-            return Result.Failure<XDocument>(
-                BanguatErrors.TransportFailure($"Response body was not valid XML: {ex.Message}"));
+            return Fail(activity, operationName, BanguatErrors.TransportFailure(),
+                $"HTTP {(int)statusCode}: response body was not valid XML: {ex.Message}", ex);
         }
 
+        // A SOAP 1.1 fault normally arrives with HTTP 500, so the fault check comes before the status check.
         XElement? fault = document.Descendants(BanguatSoapNamespaces.Soap + "Fault").FirstOrDefault();
         if (fault is not null)
         {
@@ -73,12 +98,30 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient) : IBanguatSoap
             string faultString = fault.Element("faultstring")?.Value
                                  ?? "The service returned an unspecified SOAP fault.";
             activity?.SetTag("banguat.soap.fault_code", faultCode);
-            activity?.SetStatus(ActivityStatusCode.Error, faultString);
-            return Result.Failure<XDocument>(BanguatErrors.SoapFault(faultCode, faultString));
+            return Fail(activity, operationName, BanguatErrors.SoapFault(), $"{faultCode}: {faultString}");
+        }
+
+        if ((int)statusCode is < 200 or > 299)
+        {
+            return Fail(activity, operationName, BanguatErrors.TransportFailure(),
+                $"HTTP {(int)statusCode} without a SOAP fault");
         }
 
         activity?.SetStatus(ActivityStatusCode.Ok);
         return Result.Success(document);
+    }
+
+    private Result<XDocument> Fail(
+        Activity? activity, string operationName, Error error, string reason, Exception? exception = null)
+    {
+        activity?.SetStatus(ActivityStatusCode.Error, reason);
+        if (exception is not null)
+        {
+            activity?.AddException(exception);
+        }
+
+        logger.LogWarning(exception, "Banguat {Operation} failed: {Reason}", operationName, reason);
+        return Result.Failure<XDocument>(error);
     }
 
     private static XDocument CreateEnvelope(XElement operation)

@@ -4,6 +4,7 @@ using Banguat.ExchangeRates.Diagnostics;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Banguat.ExchangeRates.Tests.Diagnostics;
 
@@ -18,7 +19,10 @@ public class CachingDecoratorTests
     {
         public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
         {
-            public TimeSpan GetCacheDuration(IRateCalendar calendar) => TimeSpan.FromMinutes(5);
+            public TimeSpan GetCacheDuration(IRateCalendar calendar)
+            {
+                return TimeSpan.FromMinutes(5);
+            }
         }
 
         public sealed record UncacheableQuery : IQuery<string>;
@@ -31,7 +35,10 @@ public class CachingDecoratorTests
     {
         public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
         {
-            public TimeSpan GetCacheDuration(IRateCalendar calendar) => TimeSpan.FromMinutes(5);
+            public TimeSpan GetCacheDuration(IRateCalendar calendar)
+            {
+                return TimeSpan.FromMinutes(5);
+            }
         }
     }
 
@@ -169,7 +176,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         SucceedingCacheableHandler handler = new("first");
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(), Calendar,
+            handler, cache, Options.Create(new CachingOptions()), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         Result<string> first = await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -186,7 +193,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         SucceedingCacheableHandler handler = new("value");
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(), Calendar,
+            handler, cache, Options.Create(new CachingOptions()), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -205,7 +212,7 @@ public class CachingDecoratorTests
             DurationOverrides = new Dictionary<string, TimeSpan> { ["Probe"] = TimeSpan.FromMinutes(30) }
         };
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, options, Calendar,
+            handler, cache, Options.Create(options), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -219,7 +226,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         RecordingUncacheableHandler handler = new();
         CachingDecorator.QueryHandler<Probe.UncacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(), Calendar,
+            handler, cache, Options.Create(new CachingOptions()), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.UncacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.UncacheableQuery(), CancellationToken.None);
@@ -235,7 +242,7 @@ public class CachingDecoratorTests
         FakeDistributedCache cache = new();
         FailingCacheableHandler handler = new(Error.Failure("Probe.Failed", "boom"));
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(), Calendar,
+            handler, cache, Options.Create(new CachingOptions()), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -251,7 +258,7 @@ public class CachingDecoratorTests
         ThrowingDistributedCache cache = new();
         SucceedingCacheableHandler handler = new("value");
         CachingDecorator.QueryHandler<Probe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(), Calendar,
+            handler, cache, Options.Create(new CachingOptions()), Calendar,
             NullLogger<CachingDecorator.QueryHandler<Probe.CacheableQuery, string>>.Instance);
 
         Result<string> result = await decorator.Handle(new Probe.CacheableQuery(), CancellationToken.None);
@@ -343,12 +350,252 @@ public class CachingDecoratorTests
         SucceedingSamplingProbeHandler handler = new("value");
         RecordingLogger logger = new();
         CachingDecorator.QueryHandler<SamplingProbe.CacheableQuery, string> decorator = new(
-            handler, cache, new CachingOptions(), Calendar, logger);
+            handler, cache, Options.Create(new CachingOptions()), Calendar, logger);
 
         await decorator.Handle(new SamplingProbe.CacheableQuery(), CancellationToken.None);
         await decorator.Handle(new SamplingProbe.CacheableQuery(), CancellationToken.None);
 
         Assert.Equal(1, logger.LoggedLevels.Count(level => level == LogLevel.Warning));
         Assert.Equal(1, logger.LoggedLevels.Count(level => level == LogLevel.Debug));
+    }
+
+    // Own declaring types so their operation names don't share the process-wide warning sampler with "Probe".
+    private static class CancellationProbe
+    {
+        public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
+        {
+            public TimeSpan GetCacheDuration(IRateCalendar calendar)
+            {
+                return TimeSpan.FromMinutes(5);
+            }
+        }
+    }
+
+    private static class ZeroDurationProbe
+    {
+        public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
+        {
+            public TimeSpan GetCacheDuration(IRateCalendar calendar)
+            {
+                return TimeSpan.FromMinutes(5);
+            }
+        }
+    }
+
+    private sealed class InnerHandler<TQuery>(Result<string> result) : IQueryHandler<TQuery, string>
+        where TQuery : IQuery<string>
+    {
+        public int CallCount { get; private set; }
+
+        public Task<Result<string>> Handle(TQuery query, CancellationToken cancellationToken)
+        {
+            CallCount++;
+            return Task.FromResult(result);
+        }
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<LogLevel> Levels { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+        {
+            return null;
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Levels.Add(logLevel);
+        }
+    }
+
+    /// <summary>A cache whose calls behave like a backend's own timeout: cancelled without the caller cancelling.</summary>
+    private sealed class TimingOutDistributedCache(bool failReads, bool failWrites) : IDistributedCache
+    {
+        public byte[]? Get(string key)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<byte[]?> GetAsync(string key, CancellationToken token = default)
+        {
+            return failReads
+                ? Task.FromException<byte[]?>(new TaskCanceledException("cache read timed out"))
+                : Task.FromResult<byte[]?>(null);
+        }
+
+        public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options,
+            CancellationToken token = default)
+        {
+            return failWrites
+                ? Task.FromException(new TaskCanceledException("cache write timed out"))
+                : Task.CompletedTask;
+        }
+
+        public void Refresh(string key)
+        {
+        }
+
+        public Task RefreshAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public void Remove(string key)
+        {
+        }
+
+        public Task RemoveAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class CorruptDistributedCache : IDistributedCache
+    {
+        public byte[]? Get(string key)
+        {
+            return "{not json"u8.ToArray();
+        }
+
+        public Task<byte[]?> GetAsync(string key, CancellationToken token = default)
+        {
+            return Task.FromResult<byte[]?>("{not json"u8.ToArray());
+        }
+
+        public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
+        {
+        }
+
+        public Task SetAsync(string key, byte[] value, DistributedCacheEntryOptions options,
+            CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public void Refresh(string key)
+        {
+        }
+
+        public Task RefreshAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public void Remove(string key)
+        {
+        }
+
+        public Task RemoveAsync(string key, CancellationToken token = default)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    private static CachingDecorator.QueryHandler<TQuery, string> Decorate<TQuery>(
+        IQueryHandler<TQuery, string> inner, IDistributedCache cache, CachingOptions? options = null,
+        ILogger<CachingDecorator.QueryHandler<TQuery, string>>? logger = null)
+        where TQuery : IQuery<string>
+    {
+        return new CachingDecorator.QueryHandler<TQuery, string>(
+            inner, cache, Options.Create(options ?? new CachingOptions()), Calendar,
+            logger ?? NullLogger<CachingDecorator.QueryHandler<TQuery, string>>.Instance);
+    }
+
+    [Fact]
+    public async Task Handle_Should_FallThroughToInner_WhenCacheReadThrowsTaskCanceledWithoutCallerCancellation()
+    {
+        InnerHandler<CancellationProbe.CacheableQuery> inner = new(Result.Success("fresh"));
+        CachingDecorator.QueryHandler<CancellationProbe.CacheableQuery, string> decorator =
+            Decorate(inner, new TimingOutDistributedCache(true, false));
+
+        Result<string> result = await decorator.Handle(new CancellationProbe.CacheableQuery(), CancellationToken.None);
+
+        Assert.Equal("fresh", result.Value);
+        Assert.Equal(1, inner.CallCount);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnResult_WhenCacheWriteThrowsTaskCanceledWithoutCallerCancellation()
+    {
+        InnerHandler<CancellationProbe.CacheableQuery> inner = new(Result.Success("fresh"));
+        CachingDecorator.QueryHandler<CancellationProbe.CacheableQuery, string> decorator =
+            Decorate(inner, new TimingOutDistributedCache(false, true));
+
+        Result<string> result = await decorator.Handle(new CancellationProbe.CacheableQuery(), CancellationToken.None);
+
+        Assert.Equal("fresh", result.Value);
+    }
+
+    [Fact]
+    public async Task Handle_Should_PropagateCancellation_WhenCallerCancels()
+    {
+        InnerHandler<CancellationProbe.CacheableQuery> inner = new(Result.Success("fresh"));
+        CachingDecorator.QueryHandler<CancellationProbe.CacheableQuery, string> decorator =
+            Decorate(inner, new TimingOutDistributedCache(true, true));
+        using CancellationTokenSource cts = new();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            decorator.Handle(new CancellationProbe.CacheableQuery(), cts.Token));
+        Assert.Equal(0, inner.CallCount);
+    }
+
+    [Fact]
+    public async Task Handle_Should_NotWrite_WhenDurationOverrideIsZero()
+    {
+        FakeDistributedCache cache = new();
+        InnerHandler<ZeroDurationProbe.CacheableQuery> inner = new(Result.Success("value"));
+        RecordingLogger<CachingDecorator.QueryHandler<ZeroDurationProbe.CacheableQuery, string>> logger = new();
+        CachingOptions options = new()
+        {
+            DurationOverrides = new Dictionary<string, TimeSpan> { ["ZeroDurationProbe"] = TimeSpan.Zero }
+        };
+        CachingDecorator.QueryHandler<ZeroDurationProbe.CacheableQuery, string> decorator =
+            Decorate(inner, cache, options, logger);
+
+        Result<string> result = await decorator.Handle(new ZeroDurationProbe.CacheableQuery(), CancellationToken.None);
+
+        Assert.Equal("value", result.Value);
+        Assert.Equal(0, cache.SetCallCount);
+        Assert.DoesNotContain(LogLevel.Warning, logger.Levels);
+        Assert.DoesNotContain(LogLevel.Debug, logger.Levels);
+    }
+
+    [Fact]
+    public async Task Handle_Should_TreatCorruptCachedBytesAsMiss()
+    {
+        InnerHandler<CancellationProbe.CacheableQuery> inner = new(Result.Success("fresh"));
+        CachingDecorator.QueryHandler<CancellationProbe.CacheableQuery, string> decorator =
+            Decorate(inner, new CorruptDistributedCache());
+
+        Result<string> result = await decorator.Handle(new CancellationProbe.CacheableQuery(), CancellationToken.None);
+
+        Assert.Equal("fresh", result.Value);
+        Assert.Equal(1, inner.CallCount);
+    }
+
+    [Fact]
+    public async Task Handle_Should_NotCacheFailures_ForUpstreamErrorTypes()
+    {
+        FakeDistributedCache cache = new();
+        InnerHandler<CancellationProbe.CacheableQuery> inner = new(Result.Failure<string>(BanguatErrors.Timeout()));
+        CachingDecorator.QueryHandler<CancellationProbe.CacheableQuery, string> decorator = Decorate(inner, cache);
+
+        Result<string> result = await decorator.Handle(new CancellationProbe.CacheableQuery(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(0, cache.SetCallCount);
     }
 }

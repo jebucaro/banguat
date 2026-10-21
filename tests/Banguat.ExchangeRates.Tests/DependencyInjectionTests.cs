@@ -8,7 +8,10 @@ using Banguat.ExchangeRates.Soap;
 using Banguat.ExchangeRates.Tests.Diagnostics;
 using Banguat.ExchangeRates.Tests.Features;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace Banguat.ExchangeRates.Tests;
 
@@ -71,6 +74,20 @@ public class DependencyInjectionTests
     }
 
     [Fact]
+    public void AddBanguatExchangeRates_Should_ResolveCurrencyResolver()
+    {
+        ServiceCollection services = new();
+        services.AddBanguatExchangeRates();
+
+        using ServiceProvider provider = services.BuildServiceProvider(true);
+        using IServiceScope scope = provider.CreateScope();
+
+        ICurrencyResolver resolver = scope.ServiceProvider.GetRequiredService<ICurrencyResolver>();
+
+        Assert.IsType<CurrencyResolver>(resolver);
+    }
+
+    [Fact]
     public void AddBanguatExchangeRates_Should_ResolveDistributedCache()
     {
         ServiceCollection services = new();
@@ -92,9 +109,102 @@ public class DependencyInjectionTests
             configureCaching: caching => caching.DurationOverrides["Test"] = TimeSpan.FromMinutes(1));
 
         using ServiceProvider provider = services.BuildServiceProvider();
-        CachingOptions options = provider.GetRequiredService<CachingOptions>();
+        CachingOptions options = provider.GetRequiredService<IOptions<CachingOptions>>().Value;
 
         Assert.Equal(TimeSpan.FromMinutes(1), options.DurationOverrides["Test"]);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_Should_RejectRelativeBaseAddress()
+    {
+        ServiceCollection services = new();
+        services.AddBanguatExchangeRates(options => options.BaseAddress = new Uri("/relative", UriKind.Relative));
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        OptionsValidationException exception = Assert.Throws<OptionsValidationException>(() =>
+            provider.GetRequiredService<IOptions<BanguatExchangeRateClientOptions>>().Value);
+        Assert.Contains("Banguat:BaseAddress", exception.Message);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_Should_RejectNonPositiveTimeout()
+    {
+        ServiceCollection services = new();
+        services.AddBanguatExchangeRates(options => options.TotalTimeout = TimeSpan.Zero);
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        OptionsValidationException exception = Assert.Throws<OptionsValidationException>(() =>
+            provider.GetRequiredService<IOptions<BanguatExchangeRateClientOptions>>().Value);
+        Assert.Contains("Banguat:TotalTimeout", exception.Message);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_Should_RejectNegativeCacheDurationOverride()
+    {
+        ServiceCollection services = new();
+        services.AddBanguatExchangeRates(
+            configureCaching: caching => caching.DurationOverrides["Test"] = TimeSpan.FromMinutes(-1));
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        OptionsValidationException exception = Assert.Throws<OptionsValidationException>(() =>
+            provider.GetRequiredService<IOptions<CachingOptions>>().Value);
+        Assert.Contains("Caching:DurationOverrides", exception.Message);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_OnHostBuilder_Should_BindConfigurationSections()
+    {
+        HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Banguat:BaseAddress"] = "https://example.test/TipoCambio.asmx",
+            ["Banguat:TotalTimeout"] = "00:00:20",
+            ["Caching:DurationOverrides:GetRateHistory"] = "00:05:00"
+        });
+
+        builder.AddBanguatExchangeRates();
+        using IHost host = builder.Build();
+
+        BanguatExchangeRateClientOptions client =
+            host.Services.GetRequiredService<IOptions<BanguatExchangeRateClientOptions>>().Value;
+        CachingOptions caching = host.Services.GetRequiredService<IOptions<CachingOptions>>().Value;
+        Assert.Equal(new Uri("https://example.test/TipoCambio.asmx"), client.BaseAddress);
+        Assert.Equal(TimeSpan.FromSeconds(20), client.TotalTimeout);
+        Assert.Equal(TimeSpan.FromMinutes(5), caching.DurationOverrides["GetRateHistory"]);
+    }
+
+    [Fact]
+    public void AddBanguatExchangeRates_OnHostBuilder_Should_LetCodeOverrideConfiguration()
+    {
+        HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Banguat:TotalTimeout"] = "00:00:20"
+        });
+
+        builder.AddBanguatExchangeRates(options => options.TotalTimeout = TimeSpan.FromSeconds(5));
+        using IHost host = builder.Build();
+
+        Assert.Equal(TimeSpan.FromSeconds(5),
+            host.Services.GetRequiredService<IOptions<BanguatExchangeRateClientOptions>>().Value.TotalTimeout);
+    }
+
+    [Fact]
+    public async Task AddBanguatExchangeRates_OnHostBuilder_Should_FailStartup_WhenConfigurationIsInvalid()
+    {
+        HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Banguat:TotalTimeout"] = "00:00:00"
+        });
+
+        builder.AddBanguatExchangeRates();
+        using IHost host = builder.Build();
+
+        await Assert.ThrowsAsync<OptionsValidationException>(() => host.StartAsync());
     }
 
     [Fact]

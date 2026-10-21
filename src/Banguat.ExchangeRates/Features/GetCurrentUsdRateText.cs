@@ -12,7 +12,10 @@ public static class GetCurrentUsdRateText
     {
         // Banguat publishes at most one rate per Guatemala business day, so today's value stays valid
         // until the local day rolls over.
-        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.TimeUntilNextDay;
+        public TimeSpan GetCacheDuration(IRateCalendar calendar)
+        {
+            return calendar.TimeUntilNextDay;
+        }
     }
 
     public sealed record Response(string Text);
@@ -43,7 +46,7 @@ public static class GetCurrentUsdRateText
                 .Value;
 
             return string.IsNullOrWhiteSpace(text)
-                ? Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("TipoCambioDiaString"))
+                ? Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape())
                 : Result.Success(new Response(text));
         }
     }

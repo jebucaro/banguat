@@ -13,6 +13,12 @@ public class GetRateHistoryEndpointTests
 {
     private readonly IBanguatExchangeRateClient _client = Substitute.For<IBanguatExchangeRateClient>();
     private readonly ICurrencyAliasCatalog _aliasCatalog = new BundledCurrencyAliasCatalog();
+    private readonly ICurrencyResolver _currencyResolver;
+
+    public GetRateHistoryEndpointTests()
+    {
+        _currencyResolver = new CurrencyResolver(_client, _aliasCatalog);
+    }
 
     // 2026-09-23T01:00Z is 19:00 on 2026-09-22 in Guatemala, so five hours of the local day remain.
     private static readonly IRateCalendar Calendar = new GuatemalaRateCalendar(
@@ -56,14 +62,15 @@ public class GetRateHistoryEndpointTests
     public async Task HandleAsync_Since_ReturnsHistory()
     {
         CurrencyCode eur = new(24);
-        GetCurrencyRateHistorySince.Response response = new(
-            [new GetCurrencyRateHistorySince.RatePoint(new DateOnly(2026, 8, 1), 1.1523m, 1.1523m)]);
-        _client.GetCurrencyRateHistorySinceAsync(new DateOnly(2026, 8, 1), eur, Arg.Any<CancellationToken>())
+        GetRateHistory.Response response = new(
+            [new GetRateHistory.RatePoint(new DateOnly(2026, 8, 1), 1.1523m, 1.1523m)]);
+        _client.GetRateHistoryAsync(eur, new DateOnly(2026, 8, 1), null, null, Arg.Any<CancellationToken>())
             .Returns(Result.Success(response));
 
         Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
             await GetRateHistoryEndpoint.HandleAsync(
-                "24", "2026-08-01", null, null, _client, _aliasCatalog, CancellationToken.None);
+                "24", new GetRateHistoryEndpoint.HistoryRange("2026-08-01", null, null), _client, _currencyResolver,
+                _aliasCatalog, CancellationToken.None);
 
         Ok<GetRateHistoryEndpoint.RateHistoryResponse> ok =
             Assert.IsType<Ok<GetRateHistoryEndpoint.RateHistoryResponse>>(result.Result);
@@ -77,15 +84,17 @@ public class GetRateHistoryEndpointTests
     public async Task HandleAsync_FromAndTo_ReturnsHistory()
     {
         CurrencyCode eur = new(24);
-        GetCurrencyRateHistory.Response response = new(
-            [new GetCurrencyRateHistory.RatePoint(new DateOnly(2026, 8, 1), 1.1523m, 1.1523m)]);
-        _client.GetCurrencyRateHistoryAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2), eur,
+        GetRateHistory.Response response = new(
+            [new GetRateHistory.RatePoint(new DateOnly(2026, 8, 1), 1.1523m, 1.1523m)]);
+        _client.GetRateHistoryAsync(eur, null, new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Success(response));
 
         Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
             await GetRateHistoryEndpoint.HandleAsync(
-                "24", null, "2026-08-01", "2026-08-02", _client, _aliasCatalog, CancellationToken.None);
+                "24", new GetRateHistoryEndpoint.HistoryRange(null, "2026-08-01", "2026-08-02"), _client,
+                _currencyResolver, _aliasCatalog,
+                CancellationToken.None);
 
         Ok<GetRateHistoryEndpoint.RateHistoryResponse> ok =
             Assert.IsType<Ok<GetRateHistoryEndpoint.RateHistoryResponse>>(result.Result);
@@ -96,13 +105,15 @@ public class GetRateHistoryEndpointTests
     public async Task HandleAsync_FromAndTo_EmptyRange_ReturnsEmptyResult()
     {
         CurrencyCode eur = new(24);
-        _client.GetCurrencyRateHistoryAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2), eur,
+        _client.GetRateHistoryAsync(eur, null, new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 2),
                 Arg.Any<CancellationToken>())
-            .Returns(Result.Success(new GetCurrencyRateHistory.Response([])));
+            .Returns(Result.Success(new GetRateHistory.Response([])));
 
         Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
             await GetRateHistoryEndpoint.HandleAsync(
-                "24", null, "2026-08-01", "2026-08-02", _client, _aliasCatalog, CancellationToken.None);
+                "24", new GetRateHistoryEndpoint.HistoryRange(null, "2026-08-01", "2026-08-02"), _client,
+                _currencyResolver, _aliasCatalog,
+                CancellationToken.None);
 
         Ok<GetRateHistoryEndpoint.RateHistoryResponse> ok =
             Assert.IsType<Ok<GetRateHistoryEndpoint.RateHistoryResponse>>(result.Result);
@@ -115,43 +126,41 @@ public class GetRateHistoryEndpointTests
     {
         Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
             await GetRateHistoryEndpoint.HandleAsync(
-                "not-a-currency", "2026-08-01", null, null, _client, _aliasCatalog, CancellationToken.None);
+                "not-a-currency", new GetRateHistoryEndpoint.HistoryRange("2026-08-01", null, null), _client,
+                _currencyResolver, _aliasCatalog,
+                CancellationToken.None);
 
         ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
         Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
     }
 
-    [Fact]
-    public async Task HandleAsync_NeitherSinceNorRange_ReturnsBadRequestProblem()
+    // Which combinations are valid is the library's rule (see GetRateHistoryTests); the endpoint only has
+    // to forward the parsed dates unchanged and surface the library's validation error as a 400.
+    [Theory]
+    [InlineData(null, null, null)]
+    [InlineData("2026-08-01", "2026-08-01", "2026-08-02")]
+    [InlineData(null, "2026-08-01", null)]
+    public async Task HandleAsync_InvalidHistoryRange_ReturnsBadRequestProblem(string? since, string? from, string? to)
     {
+        _client.GetRateHistoryAsync(Arg.Any<CurrencyCode>(), Arg.Any<DateOnly?>(), Arg.Any<DateOnly?>(),
+                Arg.Any<DateOnly?>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<GetRateHistory.Response>(BanguatErrors.InvalidHistoryRange()));
+
         Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
             await GetRateHistoryEndpoint.HandleAsync(
-                "usd", null, null, null, _client, _aliasCatalog, CancellationToken.None);
+                "usd", new GetRateHistoryEndpoint.HistoryRange(since, from, to), _client, _currencyResolver,
+                _aliasCatalog, CancellationToken.None);
 
         ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
         Assert.Equal(StatusCodes.Status400BadRequest, problem.StatusCode);
+        Assert.Equal("Banguat.InvalidHistoryRange", problem.ProblemDetails.Title);
+        await _client.Received(1).GetRateHistoryAsync(
+            new CurrencyCode(2), ParseOrNull(since), ParseOrNull(from), ParseOrNull(to), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task HandleAsync_BothSinceAndRange_ReturnsBadRequestProblem()
+    private static DateOnly? ParseOrNull(string? value)
     {
-        Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
-            await GetRateHistoryEndpoint.HandleAsync(
-                "usd", "2026-08-01", "2026-08-01", "2026-08-02", _client, _aliasCatalog, CancellationToken.None);
-
-        ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
-        Assert.Equal(StatusCodes.Status400BadRequest, problem.StatusCode);
-    }
-
-    [Fact]
-    public async Task HandleAsync_PartialRange_ReturnsBadRequestProblem()
-    {
-        Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
-            await GetRateHistoryEndpoint.HandleAsync(
-                "usd", null, "2026-08-01", null, _client, _aliasCatalog, CancellationToken.None);
-
-        ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
-        Assert.Equal(StatusCodes.Status400BadRequest, problem.StatusCode);
+        return value is null ? null : DateOnly.Parse(value);
     }
 
     [Fact]
@@ -159,7 +168,8 @@ public class GetRateHistoryEndpointTests
     {
         Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
             await GetRateHistoryEndpoint.HandleAsync(
-                "usd", "08/01/2026", null, null, _client, _aliasCatalog, CancellationToken.None);
+                "usd", new GetRateHistoryEndpoint.HistoryRange("08/01/2026", null, null), _client, _currencyResolver,
+                _aliasCatalog, CancellationToken.None);
 
         ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
         Assert.Equal(StatusCodes.Status400BadRequest, problem.StatusCode);
@@ -169,13 +179,14 @@ public class GetRateHistoryEndpointTests
     public async Task HandleAsync_TransportFailure_ReturnsProblem()
     {
         CurrencyCode usd = new(2);
-        _client.GetCurrencyRateHistorySinceAsync(new DateOnly(2026, 8, 1), usd, Arg.Any<CancellationToken>())
-            .Returns(Result.Failure<GetCurrencyRateHistorySince.Response>(
+        _client.GetRateHistoryAsync(usd, new DateOnly(2026, 8, 1), null, null, Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<GetRateHistory.Response>(
                 Error.Failure("Banguat.TransportFailure", "boom")));
 
         Results<Ok<GetRateHistoryEndpoint.RateHistoryResponse>, ProblemHttpResult> result =
             await GetRateHistoryEndpoint.HandleAsync(
-                "usd", "2026-08-01", null, null, _client, _aliasCatalog, CancellationToken.None);
+                "usd", new GetRateHistoryEndpoint.HistoryRange("2026-08-01", null, null), _client, _currencyResolver,
+                _aliasCatalog, CancellationToken.None);
 
         ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
         Assert.Equal(StatusCodes.Status500InternalServerError, problem.StatusCode);

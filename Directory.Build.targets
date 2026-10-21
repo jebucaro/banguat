@@ -3,7 +3,7 @@
         <HuskyRoot Condition="'$(HuskyRoot)' == ''">$(MSBuildThisFileDirectory)</HuskyRoot>
     </PropertyGroup>
     <Target Name="Husky" AfterTargets="Restore" Condition="'$(HUSKY)' != 0"
-            Inputs="$(HuskyRoot).config/dotnet-tools.json"
+            Inputs="$(HuskyRoot)dotnet-tools.json"
             Outputs="$(HuskyRoot).husky/_/install.stamp">
         <Exec Command="dotnet tool restore"
               StandardOutputImportance="Low" StandardErrorImportance="High"/>

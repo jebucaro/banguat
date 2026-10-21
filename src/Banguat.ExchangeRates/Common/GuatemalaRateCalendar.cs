@@ -51,7 +51,10 @@ public sealed class GuatemalaRateCalendar : IRateCalendar
         }
     }
 
-    private DateTimeOffset LocalTime(DateTimeOffset utcNow) => TimeZoneInfo.ConvertTime(utcNow, _timeZone);
+    private DateTimeOffset LocalTime(DateTimeOffset utcNow)
+    {
+        return TimeZoneInfo.ConvertTime(utcNow, _timeZone);
+    }
 
     private DateTimeOffset NextBoundaryFrom(DateTimeOffset utcNow)
     {

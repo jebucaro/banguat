@@ -5,3 +5,9 @@ riderModule.iml
 /_ReSharper.Caches/
 .superpowers
 docs/superpowers
+.idea/**/workspace.xml
+*.user
+.vs/
+TestResults/
+.env
+.sonarqube/

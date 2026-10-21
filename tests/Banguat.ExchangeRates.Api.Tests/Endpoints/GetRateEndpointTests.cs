@@ -12,6 +12,12 @@ public class GetRateEndpointTests
 {
     private readonly IBanguatExchangeRateClient _client = Substitute.For<IBanguatExchangeRateClient>();
     private readonly ICurrencyAliasCatalog _aliasCatalog = new BundledCurrencyAliasCatalog();
+    private readonly ICurrencyResolver _currencyResolver;
+
+    public GetRateEndpointTests()
+    {
+        _currencyResolver = new CurrencyResolver(_client, _aliasCatalog);
+    }
 
     [Fact]
     public async Task HandleAsync_KnownAlias_ReturnsRate()
@@ -22,7 +28,7 @@ public class GetRateEndpointTests
         _client.GetCurrentRateAsync(usd, Arg.Any<CancellationToken>()).Returns(Result.Success(response));
 
         Results<Ok<GetRateEndpoint.RateResponse>, ProblemHttpResult> result =
-            await GetRateEndpoint.HandleAsync("usd", _client, _aliasCatalog, CancellationToken.None);
+            await GetRateEndpoint.HandleAsync("usd", _client, _currencyResolver, _aliasCatalog, CancellationToken.None);
 
         Ok<GetRateEndpoint.RateResponse> ok = Assert.IsType<Ok<GetRateEndpoint.RateResponse>>(result.Result);
         Assert.Equal(2, ok.Value!.Currency);
@@ -40,7 +46,7 @@ public class GetRateEndpointTests
             .Returns(Result.Success(new GetCurrentRate.Response([])));
 
         Results<Ok<GetRateEndpoint.RateResponse>, ProblemHttpResult> result =
-            await GetRateEndpoint.HandleAsync("24", _client, _aliasCatalog, CancellationToken.None);
+            await GetRateEndpoint.HandleAsync("24", _client, _currencyResolver, _aliasCatalog, CancellationToken.None);
 
         Ok<GetRateEndpoint.RateResponse> ok = Assert.IsType<Ok<GetRateEndpoint.RateResponse>>(result.Result);
         Assert.Null(ok.Value!.Date);
@@ -52,7 +58,8 @@ public class GetRateEndpointTests
     public async Task HandleAsync_UnknownCurrency_ReturnsNotFoundProblem()
     {
         Results<Ok<GetRateEndpoint.RateResponse>, ProblemHttpResult> result =
-            await GetRateEndpoint.HandleAsync("not-a-currency", _client, _aliasCatalog, CancellationToken.None);
+            await GetRateEndpoint.HandleAsync(
+                "not-a-currency", _client, _currencyResolver, _aliasCatalog, CancellationToken.None);
 
         ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
         Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
@@ -67,10 +74,27 @@ public class GetRateEndpointTests
             .Returns(Result.Failure<GetCurrentRate.Response>(Error.Failure("Banguat.TransportFailure", "boom")));
 
         Results<Ok<GetRateEndpoint.RateResponse>, ProblemHttpResult> result =
-            await GetRateEndpoint.HandleAsync("usd", _client, _aliasCatalog, CancellationToken.None);
+            await GetRateEndpoint.HandleAsync("usd", _client, _currencyResolver, _aliasCatalog, CancellationToken.None);
 
         ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
         Assert.Equal(StatusCodes.Status500InternalServerError, problem.StatusCode);
         Assert.Equal("boom", problem.ProblemDetails.Detail);
+    }
+
+    [Fact]
+    public async Task HandleAsync_NumericCodeNotInCatalog_ReturnsNotFoundProblemWithoutFetchingRate()
+    {
+        _client.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(
+            new GetAvailableCurrencies.Response(
+                [new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(2), "Dólares de EE.UU.")])));
+
+        Results<Ok<GetRateEndpoint.RateResponse>, ProblemHttpResult> result =
+            await GetRateEndpoint.HandleAsync(
+                "840", _client, _currencyResolver, _aliasCatalog, CancellationToken.None);
+
+        ProblemHttpResult problem = Assert.IsType<ProblemHttpResult>(result.Result);
+        Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
+        Assert.Contains("ISO 4217", problem.ProblemDetails.Detail);
+        await _client.DidNotReceive().GetCurrentRateAsync(Arg.Any<CurrencyCode>(), Arg.Any<CancellationToken>());
     }
 }

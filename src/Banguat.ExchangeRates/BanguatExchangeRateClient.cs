@@ -11,8 +11,7 @@ public sealed class BanguatExchangeRateClient(
     IQueryHandler<GetCurrentRate.Query, GetCurrentRate.Response> getCurrentRate,
     IQueryHandler<GetUsdRateHistorySince.Query, GetUsdRateHistorySince.Response> getUsdRateHistorySince,
     IQueryHandler<GetUsdRateHistory.Query, GetUsdRateHistory.Response> getUsdRateHistory,
-    IQueryHandler<GetCurrencyRateHistorySince.Query, GetCurrencyRateHistorySince.Response> getCurrencyRateHistorySince,
-    IQueryHandler<GetCurrencyRateHistory.Query, GetCurrencyRateHistory.Response> getCurrencyRateHistory)
+    IQueryHandler<GetRateHistory.Query, GetRateHistory.Response> getRateHistory)
     : IBanguatExchangeRateClient
 {
     public Task<Result<GetCurrentUsdRate.Response>> GetCurrentUsdRateAsync(
@@ -51,16 +50,13 @@ public sealed class BanguatExchangeRateClient(
         return getUsdRateHistory.Handle(new GetUsdRateHistory.Query(from, to), cancellationToken);
     }
 
-    public Task<Result<GetCurrencyRateHistorySince.Response>> GetCurrencyRateHistorySinceAsync(
-        DateOnly since, CurrencyCode currency, CancellationToken cancellationToken = default)
+    public Task<Result<GetRateHistory.Response>> GetRateHistoryAsync(
+        CurrencyCode currency,
+        DateOnly? since = null,
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken cancellationToken = default)
     {
-        return getCurrencyRateHistorySince.Handle(new GetCurrencyRateHistorySince.Query(since, currency),
-            cancellationToken);
-    }
-
-    public Task<Result<GetCurrencyRateHistory.Response>> GetCurrencyRateHistoryAsync(
-        DateOnly from, DateOnly to, CurrencyCode currency, CancellationToken cancellationToken = default)
-    {
-        return getCurrencyRateHistory.Handle(new GetCurrencyRateHistory.Query(from, to, currency), cancellationToken);
+        return getRateHistory.Handle(new GetRateHistory.Query(currency, since, from, to), cancellationToken);
     }
 }

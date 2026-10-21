@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Banguat.ExchangeRates.Diagnostics;
 
-internal static class TracingDecorator
+internal static partial class TracingDecorator
 {
     internal sealed class QueryHandler<TQuery, TResponse>(
         IQueryHandler<TQuery, TResponse> innerHandler,
@@ -40,7 +40,7 @@ internal static class TracingDecorator
             if (result.IsSuccess)
             {
                 activity?.SetStatus(ActivityStatusCode.Ok);
-                logger.LogDebug("Completed {Operation} in {ElapsedMs}ms", operationName, elapsedMs);
+                Log.Completed(logger, operationName, elapsedMs);
             }
             else
             {
@@ -49,18 +49,27 @@ internal static class TracingDecorator
 
                 LogLevel logLevel = result.Error.Type switch
                 {
-                    ErrorType.Validation => LogLevel.Information,
-                    ErrorType.Problem => LogLevel.Warning,
+                    ErrorType.Validation or ErrorType.NotFound => LogLevel.Information,
+                    ErrorType.Problem or ErrorType.Timeout or ErrorType.Unavailable => LogLevel.Warning,
                     _ => LogLevel.Error
                 };
 
-                logger.Log(
-                    logLevel,
-                    "Completed {Operation} in {ElapsedMs}ms with error {ErrorCode}: {ErrorDescription}",
-                    operationName, elapsedMs, result.Error.Code, result.Error.Description);
+                Log.CompletedWithError(
+                    logger, logLevel, operationName, elapsedMs, result.Error.Code, result.Error.Description);
             }
 
             return result;
         }
+    }
+
+    private static partial class Log
+    {
+        [LoggerMessage(LogLevel.Debug, "Completed {Operation} in {ElapsedMs}ms")]
+        public static partial void Completed(ILogger logger, string operation, double elapsedMs);
+
+        [LoggerMessage("Completed {Operation} in {ElapsedMs}ms with error {ErrorCode}: {ErrorDescription}")]
+        public static partial void CompletedWithError(
+            ILogger logger, LogLevel level, string operation, double elapsedMs, string errorCode,
+            string errorDescription);
     }
 }

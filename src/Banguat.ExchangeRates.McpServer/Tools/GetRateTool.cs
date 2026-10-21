@@ -7,7 +7,10 @@ using ModelContextProtocol.Server;
 namespace Banguat.ExchangeRates.McpServer.Tools;
 
 [McpServerToolType]
-public sealed class GetRateTool(IBanguatExchangeRateClient client, ICurrencyAliasCatalog aliasCatalog)
+public sealed class GetRateTool(
+    IBanguatExchangeRateClient client,
+    ICurrencyResolver currencyResolver,
+    ICurrencyAliasCatalog aliasCatalog)
 {
     public sealed record RateResult(
         int Currency,
@@ -19,11 +22,11 @@ public sealed class GetRateTool(IBanguatExchangeRateClient client, ICurrencyAlia
     [McpServerTool(Name = "get_rate")]
     [Description("Gets today's buy/sell exchange rate for a currency. Defaults to USD if currency is omitted.")]
     public async Task<RateResult> GetRateAsync(
-        [Description("Currency code or alias (see get_currencies). Defaults to \"usd\".")]
+        [Description(CurrencyArgument.Description)]
         string currency = "usd",
         CancellationToken cancellationToken = default)
     {
-        CurrencyCode code = CurrencyArgument.Resolve(currency, aliasCatalog);
+        CurrencyCode code = await CurrencyArgument.ResolveAsync(currency, currencyResolver, cancellationToken);
         string? alias = aliasCatalog.GetAlias(code);
 
         Result<GetCurrentRate.Response> result = await client.GetCurrentRateAsync(code, cancellationToken);

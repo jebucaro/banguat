@@ -12,13 +12,14 @@ public class GetUsdRateHistoryTests
     // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
     private static readonly IRateCalendar Calendar =
         new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
+
     [Fact]
     public async Task Handle_Should_ReturnRatePoints_OnSuccess()
     {
         XDocument document = XDocument.Parse(
             """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioRangoResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><TipoCambioRangoResult><Vars><Var><moneda>2</moneda><fecha>01/08/2026</fecha><venta>7.6350</venta><compra>7.6231</compra></Var><Var><moneda>2</moneda><fecha>05/08/2026</fecha><venta>7.62541</venta><compra>7.62484</compra></Var></Vars><TotalItems>2</TotalItems></TipoCambioRangoResult></TipoCambioRangoResponse></soap:Body></soap:Envelope>""");
         FakeBanguatSoapTransport transport = new(Result.Success(document));
-        GetUsdRateHistory.Handler handler = new(transport);
+        GetUsdRateHistory.Handler handler = new(transport, Calendar);
 
         Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
@@ -44,7 +45,7 @@ public class GetUsdRateHistoryTests
     public async Task Handle_Should_ReturnInvalidDateRange_WhenToIsBeforeFrom()
     {
         FakeBanguatSoapTransport transport = new(Result.Success(new XDocument()));
-        GetUsdRateHistory.Handler handler = new(transport);
+        GetUsdRateHistory.Handler handler = new(transport, Calendar);
 
         Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 5), new DateOnly(2026, 8, 1)), CancellationToken.None);
@@ -60,7 +61,7 @@ public class GetUsdRateHistoryTests
         XDocument document = XDocument.Parse(
             """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioRangoResponse xmlns="http://www.banguat.gob.gt/variables/ws/" /></soap:Body></soap:Envelope>""");
         FakeBanguatSoapTransport transport = new(Result.Success(document));
-        GetUsdRateHistory.Handler handler = new(transport);
+        GetUsdRateHistory.Handler handler = new(transport, Calendar);
 
         Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
@@ -73,8 +74,8 @@ public class GetUsdRateHistoryTests
     public async Task Handle_Should_PropagateTransportFailure()
     {
         FakeBanguatSoapTransport transport = new(
-            Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
-        GetUsdRateHistory.Handler handler = new(transport);
+            Result.Failure<XDocument>(BanguatErrors.TransportFailure()));
+        GetUsdRateHistory.Handler handler = new(transport, Calendar);
 
         Result<GetUsdRateHistory.Response> result = await handler.Handle(
             new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
@@ -106,5 +107,49 @@ public class GetUsdRateHistoryTests
 
         Assert.Equal(TimeSpan.FromHours(5), query.GetCacheDuration(Calendar));
         Assert.NotEqual(CacheDurationDefaults.StableHistory, query.GetCacheDuration(Calendar));
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnUnexpectedShape_WhenARowHasEmptyVenta()
+    {
+        XDocument document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioRangoResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><TipoCambioRangoResult><Vars><Var><moneda>2</moneda><fecha>01/08/2026</fecha><venta></venta><compra>7.6231</compra></Var><Var><moneda>2</moneda><fecha>05/08/2026</fecha><venta>7.62541</venta><compra>7.62484</compra></Var></Vars><TotalItems>2</TotalItems></TipoCambioRangoResult></TipoCambioRangoResponse></soap:Body></soap:Envelope>""");
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetUsdRateHistory.Handler handler = new(transport, Calendar);
+
+        Result<GetUsdRateHistory.Response> result = await handler.Handle(
+            new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnUnexpectedShape_WhenTotalItemsExceedsRows()
+    {
+        XDocument document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><TipoCambioRangoResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><TipoCambioRangoResult><Vars><Var><moneda>2</moneda><fecha>01/08/2026</fecha><venta>7.6350</venta><compra>7.6231</compra></Var><Var><moneda>2</moneda><fecha>05/08/2026</fecha><venta>7.62541</venta><compra>7.62484</compra></Var></Vars><TotalItems>7</TotalItems></TipoCambioRangoResult></TipoCambioRangoResponse></soap:Body></soap:Envelope>""");
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetUsdRateHistory.Handler handler = new(transport, Calendar);
+
+        Result<GetUsdRateHistory.Response> result = await handler.Handle(
+            new GetUsdRateHistory.Query(new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 5)), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Handle_Should_RejectWithoutCallingBanguat_WhenRangeExceedsMaxDays()
+    {
+        FakeBanguatSoapTransport transport = new(Result.Success(new XDocument()));
+        GetUsdRateHistory.Handler handler = new(transport, Calendar);
+
+        Result<GetUsdRateHistory.Response> result = await handler.Handle(
+            new GetUsdRateHistory.Query(new DateOnly(1990, 1, 1), new DateOnly(2026, 9, 1)), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.DateRangeTooLong", result.Error.Code);
+        Assert.Null(transport.LastOperationName);
     }
 }

@@ -5,6 +5,8 @@ using Spectre.Console.Testing;
 
 namespace Banguat.ExchangeRates.Cli.Tests;
 
+// Shares the collection with the other command tests because they all write the process-wide Environment.ExitCode.
+[Collection("ConsoleOutRedirect")]
 public class SkillInstallCommandTests
 {
     private static string CreateTempDir()
@@ -14,11 +16,15 @@ public class SkillInstallCommandTests
         return path;
     }
 
-    private static string SkillMdPath(string root) =>
-        Path.Combine(root, ".claude", "skills", "banguat-exchange-rates", "SKILL.md");
+    private static string SkillMdPath(string root)
+    {
+        return Path.Combine(root, ".claude", "skills", "banguat-exchange-rates", "SKILL.md");
+    }
 
-    private static string KnownCurrenciesPath(string root) =>
-        Path.Combine(root, ".claude", "skills", "banguat-exchange-rates", "known-currencies.md");
+    private static string KnownCurrenciesPath(string root)
+    {
+        return Path.Combine(root, ".claude", "skills", "banguat-exchange-rates", "known-currencies.md");
+    }
 
     [Fact]
     public async Task ExecuteAsync_ScopeLocal_InstallsOnlyToLocalRoot()
@@ -39,8 +45,8 @@ public class SkillInstallCommandTests
         }
         finally
         {
-            Directory.Delete(localRoot, recursive: true);
-            Directory.Delete(userRoot, recursive: true);
+            Directory.Delete(localRoot, true);
+            Directory.Delete(userRoot, true);
         }
     }
 
@@ -63,8 +69,8 @@ public class SkillInstallCommandTests
         }
         finally
         {
-            Directory.Delete(localRoot, recursive: true);
-            Directory.Delete(userRoot, recursive: true);
+            Directory.Delete(localRoot, true);
+            Directory.Delete(userRoot, true);
         }
     }
 
@@ -87,8 +93,8 @@ public class SkillInstallCommandTests
         }
         finally
         {
-            Directory.Delete(localRoot, recursive: true);
-            Directory.Delete(userRoot, recursive: true);
+            Directory.Delete(localRoot, true);
+            Directory.Delete(userRoot, true);
         }
     }
 
@@ -110,8 +116,8 @@ public class SkillInstallCommandTests
         }
         finally
         {
-            Directory.Delete(localRoot, recursive: true);
-            Directory.Delete(userRoot, recursive: true);
+            Directory.Delete(localRoot, true);
+            Directory.Delete(userRoot, true);
         }
     }
 
@@ -136,8 +142,8 @@ public class SkillInstallCommandTests
         }
         finally
         {
-            Directory.Delete(localRoot, recursive: true);
-            Directory.Delete(userRoot, recursive: true);
+            Directory.Delete(localRoot, true);
+            Directory.Delete(userRoot, true);
         }
     }
 
@@ -159,8 +165,8 @@ public class SkillInstallCommandTests
         }
         finally
         {
-            Directory.Delete(localRoot, recursive: true);
-            Directory.Delete(userRoot, recursive: true);
+            Directory.Delete(localRoot, true);
+            Directory.Delete(userRoot, true);
             Environment.ExitCode = 0;
         }
     }

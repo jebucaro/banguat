@@ -36,7 +36,7 @@ internal sealed class HttpCacheFilter(Func<HttpContext, IRateCalendar, TimeSpan>
 
         IServiceProvider services = context.HttpContext.RequestServices;
         IRateCalendar calendar = services.GetRequiredService<IRateCalendar>();
-        HttpCacheOptions options = services.GetRequiredService<HttpCacheOptions>();
+        HttpCacheOptions options = services.GetRequiredService<IOptions<HttpCacheOptions>>().Value;
 
         byte[] payload = Serialize(value, services);
         string etag = ResponseETag.Compute(payload);
@@ -72,43 +72,28 @@ internal sealed class HttpCacheFilter(Func<HttpContext, IRateCalendar, TimeSpan>
             return false;
         }
 
-        foreach (string? headerValue in ifNoneMatch)
+        // Base64 tags never contain a comma, so splitting on it cannot break a tag apart.
+        return ifNoneMatch
+            .OfType<string>()
+            .SelectMany(headerValue => headerValue.Split(',', StringSplitOptions.TrimEntries))
+            .Any(candidate => MatchesETag(candidate, etag));
+    }
+
+    private static bool MatchesETag(string candidate, string etag)
+    {
+        // "*" means "any current representation", and one always exists at this point.
+        if (candidate == "*")
         {
-            if (headerValue is null)
-            {
-                continue;
-            }
-
-            // Base64 tags never contain a comma, so splitting on it cannot break a tag apart.
-            foreach (string rawCandidate in headerValue.Split(','))
-            {
-                string candidate = rawCandidate.Trim();
-
-                if (candidate.Length == 0)
-                {
-                    continue;
-                }
-
-                // "*" means "any current representation", and one always exists at this point.
-                if (candidate == "*")
-                {
-                    return true;
-                }
-
-                // Weak comparison ignores the W/ prefix; a proxy may have weakened our strong tag.
-                if (candidate.StartsWith("W/", StringComparison.Ordinal))
-                {
-                    candidate = candidate[2..];
-                }
-
-                if (string.Equals(candidate, etag, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
+            return true;
         }
 
-        return false;
+        // Weak comparison ignores the W/ prefix; a proxy may have weakened our strong tag.
+        if (candidate.StartsWith("W/", StringComparison.Ordinal))
+        {
+            candidate = candidate[2..];
+        }
+
+        return candidate.Length > 0 && string.Equals(candidate, etag, StringComparison.Ordinal);
     }
 
     /// <summary>Returns the payload of a cacheable 200 response, or <c>null</c> for anything else.</summary>
@@ -137,12 +122,13 @@ internal sealed class HttpCacheFilter(Func<HttpContext, IRateCalendar, TimeSpan>
         return JsonSerializer.SerializeToUtf8Bytes(value, value.GetType(), serializerOptions);
     }
 
-    private static string BuildCacheControl(int maxAgeSeconds, HttpCacheOptions options) =>
-        string.Create(
+    private static string BuildCacheControl(int maxAgeSeconds, HttpCacheOptions options)
+    {
+        return string.Create(
             CultureInfo.InvariantCulture,
             $"public, max-age={maxAgeSeconds}, s-maxage={maxAgeSeconds}, " +
-            $"stale-while-revalidate={(int)options.StaleWhileRevalidate.TotalSeconds}, " +
-            $"stale-if-error={(int)options.StaleIfError.TotalSeconds}");
+            $"stale-while-revalidate={(int)options.StaleWhileRevalidate.TotalSeconds}");
+    }
 
     private sealed class PrecomputedJsonResult(byte[] payload) : IResult
     {

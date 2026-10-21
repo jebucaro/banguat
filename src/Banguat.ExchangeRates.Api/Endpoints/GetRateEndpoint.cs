@@ -22,19 +22,25 @@ public sealed class GetRateEndpoint : IEndpoint
             .WithHttpCaching()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .ProducesProblem(StatusCodes.Status502BadGateway);
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
     }
 
     internal static async Task<Results<Ok<RateResponse>, ProblemHttpResult>> HandleAsync(
         string currency,
         IBanguatExchangeRateClient client,
+        ICurrencyResolver currencyResolver,
         ICurrencyAliasCatalog aliasCatalog,
         CancellationToken cancellationToken)
     {
-        if (!CurrencyRouteBinder.TryResolve(currency, aliasCatalog, out CurrencyCode code))
+        Result<CurrencyCode> resolved = await currencyResolver.ResolveAsync(currency, cancellationToken);
+        if (resolved.IsFailure)
         {
-            return CurrencyRouteBinder.UnknownCurrencyProblem(currency);
+            return resolved.Error.ToProblem();
         }
+
+        CurrencyCode code = resolved.Value;
 
         string? alias = aliasCatalog.GetAlias(code);
 

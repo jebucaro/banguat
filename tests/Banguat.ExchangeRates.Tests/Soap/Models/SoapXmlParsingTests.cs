@@ -52,14 +52,15 @@ public class SoapXmlParsingTests
     [Fact]
     public void ParseList_Should_ReturnEmptyWhenContainerIsNull()
     {
-        IReadOnlyList<string> result = SoapXmlParsing.ParseList<string>(
+        IReadOnlyList<string>? result = SoapXmlParsing.ParseList<string>(
             null, BanguatSoapNamespaces.Service + "Item", _ => "x");
 
+        Assert.NotNull(result);
         Assert.Empty(result);
     }
 
     [Fact]
-    public void ParseList_Should_MapEachItemAndSkipNulls()
+    public void ParseList_Should_ReturnNull_WhenAnyItemFailsToParse()
     {
         XElement container = new(
             BanguatSoapNamespaces.Service + "Container",
@@ -67,11 +68,67 @@ public class SoapXmlParsingTests
             new XElement(BanguatSoapNamespaces.Service + "Item", "skip"),
             new XElement(BanguatSoapNamespaces.Service + "Item", "3"));
 
-        IReadOnlyList<int?> result = SoapXmlParsing.ParseList<int?>(
+        IReadOnlyList<int?>? result = SoapXmlParsing.ParseList<int?>(
+            container,
+            BanguatSoapNamespaces.Service + "Item",
+            element => int.TryParse(element.Value, out int value) ? (int?)value : null);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void ParseList_Should_MapEachItem_WhenAllParse()
+    {
+        XElement container = new(
+            BanguatSoapNamespaces.Service + "Container",
+            new XElement(BanguatSoapNamespaces.Service + "Item", "1"),
+            new XElement(BanguatSoapNamespaces.Service + "Item", "3"));
+
+        IReadOnlyList<int?>? result = SoapXmlParsing.ParseList<int?>(
             container,
             BanguatSoapNamespaces.Service + "Item",
             element => int.TryParse(element.Value, out int value) ? (int?)value : null);
 
         Assert.Equal([1, 3], result);
+    }
+
+    [Fact]
+    public void ParseList_Should_ReturnEmpty_WhenTotalItemsIsZero()
+    {
+        XElement result = XElement.Parse(
+            """<Result xmlns="http://www.banguat.gob.gt/variables/ws/"><Vars /><TotalItems>0</TotalItems></Result>""");
+
+        IReadOnlyList<string>? items = SoapXmlParsing.ParseList<string>(
+            result.Element(BanguatSoapNamespaces.Service + "Vars"), BanguatSoapNamespaces.Service + "Var", _ => "x");
+
+        Assert.NotNull(items);
+        Assert.Empty(items);
+        Assert.True(SoapXmlParsing.CheckTotalItems(result, items.Count));
+    }
+
+    [Fact]
+    public void CheckTotalItems_Should_Pass_WhenElementAbsent()
+    {
+        XElement result = XElement.Parse("""<Result xmlns="http://www.banguat.gob.gt/variables/ws/" />""");
+
+        Assert.True(SoapXmlParsing.CheckTotalItems(result, 3));
+    }
+
+    [Fact]
+    public void CheckTotalItems_Should_Fail_WhenCountDiffers()
+    {
+        XElement result = XElement.Parse(
+            """<Result xmlns="http://www.banguat.gob.gt/variables/ws/"><TotalItems>2</TotalItems></Result>""");
+
+        Assert.False(SoapXmlParsing.CheckTotalItems(result, 1));
+    }
+
+    [Fact]
+    public void CheckTotalItems_Should_Fail_WhenValueIsNotANumber()
+    {
+        XElement result = XElement.Parse(
+            """<Result xmlns="http://www.banguat.gob.gt/variables/ws/"><TotalItems>many</TotalItems></Result>""");
+
+        Assert.False(SoapXmlParsing.CheckTotalItems(result, 1));
     }
 }

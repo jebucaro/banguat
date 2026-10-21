@@ -13,6 +13,13 @@ namespace Banguat.ExchangeRates.Cli.Tests;
 public class RateCommandTests
 {
     private readonly IBanguatExchangeRateClient _client = Substitute.For<IBanguatExchangeRateClient>();
+    private readonly ICurrencyAliasCatalog _aliasCatalog = new BundledCurrencyAliasCatalog();
+    private readonly ICurrencyResolver _currencyResolver;
+
+    public RateCommandTests()
+    {
+        _currencyResolver = new CurrencyResolver(_client, _aliasCatalog);
+    }
 
     private static GetCurrentRate.Response OnePoint(DateOnly date, decimal buy, decimal sell)
     {
@@ -48,10 +55,7 @@ public class RateCommandTests
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "24", Output = "plain"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "24", Output = "plain" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -71,10 +75,7 @@ public class RateCommandTests
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "24", Output = "rich"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "24", Output = "rich" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -91,10 +92,7 @@ public class RateCommandTests
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "24", Output = "json"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "24", Output = "json" };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -110,7 +108,7 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(usd).Returns(
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 7.6m, 7.6m)));
         TestConsole testConsole = new TestConsole().Width(200);
-        RateCommand command = new(_client, testConsole, new BundledCurrencyAliasCatalog());
+        RateCommand command = new(_client, _currencyResolver, testConsole, _aliasCatalog);
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -124,10 +122,7 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(currency).Returns(Result.Success(new GetCurrentRate.Response([])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "24", Output = "plain"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "24", Output = "plain" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -141,10 +136,7 @@ public class RateCommandTests
         _client.GetCurrentRateAsync(currency).Returns(Result.Success(new GetCurrentRate.Response([])));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "24", Output = "json"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "24", Output = "json" };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -161,10 +153,7 @@ public class RateCommandTests
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 1.1596m, 1.1597m)));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "24"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "24" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -180,10 +169,7 @@ public class RateCommandTests
             Result.Failure<GetCurrentRate.Response>(Error.Failure("Banguat.Transport", "boom")));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "24"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "24" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -198,10 +184,7 @@ public class RateCommandTests
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 7.6215m, 7.6217m)));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "USD", Output = "json"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "USD", Output = "json" };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -218,10 +201,7 @@ public class RateCommandTests
             Result.Success(OnePoint(new DateOnly(2026, 8, 18), 7.6215m, 7.6217m)));
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "2", Output = "json"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "2", Output = "json" };
 
         string stdOut = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
 
@@ -233,10 +213,7 @@ public class RateCommandTests
     {
         TestConsole testConsole = new TestConsole().Width(200);
         RateCommand command =
-            new(_client, testConsole, new BundledCurrencyAliasCatalog())
-            {
-                Currency = "USSD"
-            };
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "USSD" };
 
         await command.ExecuteAsync(new FakeInMemoryConsole());
 
@@ -245,4 +222,58 @@ public class RateCommandTests
         Assert.Contains("USD", testConsole.Output);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenNumericCodeIsNotInCatalog_WritesJsonErrorWithIsoHint()
+    {
+        _client.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>()).Returns(Result.Success(
+            new GetAvailableCurrencies.Response(
+                [new GetAvailableCurrencies.CurrencyCatalogEntry(new CurrencyCode(2), "Dólares de EE.UU.")])));
+        TestConsole testConsole = new TestConsole().Width(200);
+        RateCommand command =
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "840", Output = "json" };
+
+        string output = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
+
+        Assert.Contains("\"error\"", output);
+        Assert.Contains("ISO 4217", output);
+        Assert.Contains("Run 'currencies'", output);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenCatalogTimesOut_WritesUpstreamErrorWithoutHint()
+    {
+        _client.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>()).Returns(
+            Result.Failure<GetAvailableCurrencies.Response>(BanguatErrors.Timeout()));
+        TestConsole testConsole = new TestConsole().Width(200);
+        RateCommand command =
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "28", Output = "json" };
+
+        string output = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
+
+        Assert.Contains(BanguatErrors.Timeout().Description, output);
+        Assert.DoesNotContain("Run 'currencies'", output);
+        await _client.DidNotReceive().GetCurrentRateAsync(Arg.Any<CurrencyCode>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenRateTimesOut_WritesGenericErrorAndSetsExitCode()
+    {
+        _client.GetCurrentRateAsync(new CurrencyCode(2), Arg.Any<CancellationToken>())
+            .Returns(Result.Failure<GetCurrentRate.Response>(BanguatErrors.Timeout()));
+        TestConsole testConsole = new TestConsole().Width(200);
+        RateCommand command =
+            new(_client, _currencyResolver, testConsole, _aliasCatalog) { Currency = "USD", Output = "json" };
+        Environment.ExitCode = 0;
+        try
+        {
+            string output = await CaptureStdOutAsync(() => command.ExecuteAsync(new FakeInMemoryConsole()));
+
+            Assert.Contains(BanguatErrors.Timeout().Description, output);
+            Assert.Equal(1, Environment.ExitCode);
+        }
+        finally
+        {
+            Environment.ExitCode = 0;
+        }
+    }
 }

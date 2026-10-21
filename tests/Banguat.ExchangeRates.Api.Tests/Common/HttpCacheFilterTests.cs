@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
+using Microsoft.Extensions.Options;
 
 namespace Banguat.ExchangeRates.Api.Tests.Common;
 
@@ -21,7 +22,7 @@ public class HttpCacheFilterTests
         ServiceCollection services = new();
         services.AddSingleton<IRateCalendar>(
             new GuatemalaRateCalendar(new FixedTimeProvider(PinnedInstant)));
-        services.AddSingleton(options ?? new HttpCacheOptions());
+        services.AddSingleton(Options.Create(options ?? new HttpCacheOptions()));
 
         return new DefaultHttpContext { RequestServices = services.BuildServiceProvider() };
     }
@@ -43,8 +44,10 @@ public class HttpCacheFilterTests
         return (context, result);
     }
 
-    private static Results<Ok<Payload>, ProblemHttpResult> Success(Payload payload) =>
-        TypedResults.Ok(payload);
+    private static Results<Ok<Payload>, ProblemHttpResult> Success(Payload payload)
+    {
+        return TypedResults.Ok(payload);
+    }
 
     [Fact]
     public async Task Success_SetsMaxAgeToTimeRemainingInTheGuatemalaDay()
@@ -53,7 +56,7 @@ public class HttpCacheFilterTests
 
         Assert.Equal(
             $"public, max-age={SecondsUntilNextGuatemalaDay}, s-maxage={SecondsUntilNextGuatemalaDay}, "
-            + "stale-while-revalidate=60, stale-if-error=86400",
+            + "stale-while-revalidate=60",
             context.Response.Headers.CacheControl.ToString());
     }
 
@@ -99,7 +102,7 @@ public class HttpCacheFilterTests
         (DefaultHttpContext context, object? result) = await RunAsync(Success(new Payload(2, 7.65m)));
         context.Response.Body = new MemoryStream();
 
-        await Assert.IsAssignableFrom<IResult>(result).ExecuteAsync(context);
+        await Assert.IsType<IResult>(result, false).ExecuteAsync(context);
 
         context.Response.Body.Position = 0;
         string body = await new StreamReader(context.Response.Body).ReadToEndAsync();
@@ -108,8 +111,7 @@ public class HttpCacheFilterTests
         Assert.Equal("application/json; charset=utf-8", context.Response.ContentType);
     }
 
-    // A stale-if-error window only helps if errors themselves are never stored, otherwise an edge would
-    // cache the 502 and serve it to everyone until the boundary.
+    // Errors are never stored, otherwise an edge would cache the 502 and serve it to everyone until the boundary.
     [Fact]
     public async Task Failure_IsMarkedNoStoreAndCarriesNoEntityTag()
     {
@@ -120,7 +122,7 @@ public class HttpCacheFilterTests
 
         Assert.Equal("no-store", context.Response.Headers.CacheControl.ToString());
         Assert.True(StringValues.IsNullOrEmpty(context.Response.Headers.ETag));
-        Assert.Same(failure.Result, Assert.IsAssignableFrom<INestedHttpResult>(result).Result);
+        Assert.Same(failure.Result, Assert.IsType<INestedHttpResult>(result, false).Result);
     }
 
     [Fact]
@@ -128,25 +130,20 @@ public class HttpCacheFilterTests
     {
         (DefaultHttpContext context, _) = await RunAsync(
             Success(new Payload(2, 7.65m)),
-            resolveLifetime: (_, _) => TimeSpan.FromSeconds(1));
+            (_, _) => TimeSpan.FromSeconds(1));
 
         Assert.Contains("max-age=30", context.Response.Headers.CacheControl.ToString());
         Assert.Contains("s-maxage=30", context.Response.Headers.CacheControl.ToString());
     }
 
     [Fact]
-    public async Task StaleWindows_AreTakenFromOptions()
+    public async Task StaleWhileRevalidate_IsTakenFromOptions()
     {
-        HttpCacheOptions options = new()
-        {
-            StaleWhileRevalidate = TimeSpan.FromSeconds(15),
-            StaleIfError = TimeSpan.FromMinutes(5)
-        };
+        HttpCacheOptions options = new() { StaleWhileRevalidate = TimeSpan.FromSeconds(15) };
 
         (DefaultHttpContext context, _) = await RunAsync(Success(new Payload(2, 7.65m)), options: options);
 
         Assert.Contains("stale-while-revalidate=15", context.Response.Headers.CacheControl.ToString());
-        Assert.Contains("stale-if-error=300", context.Response.Headers.CacheControl.ToString());
     }
 
     [Fact]
@@ -154,7 +151,7 @@ public class HttpCacheFilterTests
     {
         (DefaultHttpContext context, _) = await RunAsync(
             Success(new Payload(2, 7.65m)),
-            resolveLifetime: (http, calendar) => http.Request.Query.ContainsKey("to")
+            (http, calendar) => http.Request.Query.ContainsKey("to")
                 ? TimeSpan.FromHours(24)
                 : calendar.TimeUntilNextDay,
             configureRequest: http => http.Request.QueryString = new QueryString("?to=2020-01-05"));
@@ -169,10 +166,12 @@ public class HttpCacheFilterTests
     }
 
     private static Task<(DefaultHttpContext Context, object? Result)> RunWithIfNoneMatch(
-        Payload payload, string ifNoneMatch) =>
-        RunAsync(
+        Payload payload, string ifNoneMatch)
+    {
+        return RunAsync(
             Success(payload),
             configureRequest: http => http.Request.Headers.IfNoneMatch = ifNoneMatch);
+    }
 
     [Fact]
     public async Task IfNoneMatch_MatchingTag_Returns304WithNoBody()
@@ -183,7 +182,7 @@ public class HttpCacheFilterTests
         (DefaultHttpContext context, object? result) = await RunWithIfNoneMatch(payload, etag);
 
         Assert.Equal(StatusCodes.Status304NotModified,
-            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+            Assert.IsType<IStatusCodeHttpResult>(result, false).StatusCode);
         Assert.Null(context.Response.ContentLength);
 
         // The revalidation response must still carry the tag and freshness so the client can cache again.
@@ -210,7 +209,7 @@ public class HttpCacheFilterTests
         (_, object? result) = await RunWithIfNoneMatch(payload, $"W/{etag}");
 
         Assert.Equal(StatusCodes.Status304NotModified,
-            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+            Assert.IsType<IStatusCodeHttpResult>(result, false).StatusCode);
     }
 
     [Fact]
@@ -219,7 +218,7 @@ public class HttpCacheFilterTests
         (_, object? result) = await RunWithIfNoneMatch(new Payload(2, 7.65m), "*");
 
         Assert.Equal(StatusCodes.Status304NotModified,
-            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+            Assert.IsType<IStatusCodeHttpResult>(result, false).StatusCode);
     }
 
     [Fact]
@@ -231,7 +230,7 @@ public class HttpCacheFilterTests
         (_, object? result) = await RunWithIfNoneMatch(payload, $"\"stale-one\", {etag} , \"stale-two\"");
 
         Assert.Equal(StatusCodes.Status304NotModified,
-            Assert.IsAssignableFrom<IStatusCodeHttpResult>(result).StatusCode);
+            Assert.IsType<IStatusCodeHttpResult>(result, false).StatusCode);
     }
 
     [Fact]
@@ -253,6 +252,6 @@ public class HttpCacheFilterTests
             failure, configureRequest: http => http.Request.Headers.IfNoneMatch = "*");
 
         Assert.Equal("no-store", context.Response.Headers.CacheControl.ToString());
-        Assert.Same(failure.Result, Assert.IsAssignableFrom<INestedHttpResult>(result).Result);
+        Assert.Same(failure.Result, Assert.IsType<INestedHttpResult>(result, false).Result);
     }
 }

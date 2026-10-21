@@ -11,6 +11,9 @@ public static class ResultExtensions
         {
             ErrorType.Validation => StatusCodes.Status400BadRequest,
             ErrorType.Problem => StatusCodes.Status502BadGateway,
+            ErrorType.NotFound => StatusCodes.Status404NotFound,
+            ErrorType.Timeout => StatusCodes.Status504GatewayTimeout,
+            ErrorType.Unavailable => StatusCodes.Status503ServiceUnavailable,
             _ => StatusCodes.Status500InternalServerError
         };
 

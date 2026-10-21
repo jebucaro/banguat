@@ -9,7 +9,10 @@ namespace Banguat.ExchangeRates.Cli.Commands;
 
 [Command("skill install", Description = "Install the Banguat exchange rates skill for Claude Code.")]
 public sealed partial class SkillInstallCommand(
-    IAnsiConsole console, ICurrencyAliasCatalog aliasCatalog, string? localRoot = null, string? userRoot = null)
+    IAnsiConsole ansiConsole,
+    ICurrencyAliasCatalog aliasCatalog,
+    string? localRoot = null,
+    string? userRoot = null)
     : ICommand
 {
     private readonly string _localRoot = localRoot ?? Directory.GetCurrentDirectory();
@@ -20,7 +23,7 @@ public sealed partial class SkillInstallCommand(
         Description = "Where to install: local (this repo's .claude/skills), user (~/.claude/skills), or both.")]
     public string Scope { get; set; } = "local";
 
-    public ValueTask ExecuteAsync(IConsole cliConsole)
+    public ValueTask ExecuteAsync(IConsole console)
     {
         if (!TryParseScope(out InstallScope scope))
         {
@@ -31,7 +34,8 @@ public sealed partial class SkillInstallCommand(
 
         if (staticFiles.Count == 0)
         {
-            console.MarkupLine("[red]No embedded skill files found. This build of the CLI is missing its skill content.[/]");
+            ansiConsole.MarkupLine(
+                "[red]No embedded skill files found. This build of the CLI is missing its skill content.[/]");
             Environment.ExitCode = 1;
             return default;
         }
@@ -68,7 +72,7 @@ public sealed partial class SkillInstallCommand(
                 return true;
             default:
                 scope = InstallScope.Local;
-                console.MarkupLine(
+                ansiConsole.MarkupLine(
                     $"[red]Invalid value for --scope: '{Markup.Escape(Scope)}'. Expected one of: local, user, both.[/]");
                 Environment.ExitCode = 1;
                 return false;
@@ -92,17 +96,17 @@ public sealed partial class SkillInstallCommand(
     {
         if (result.HasChanges)
         {
-            console.WriteLine(
+            ansiConsole.WriteLine(
                 $"Installed skill to {label} ({result.Written.Count} written, {result.Updated.Count} updated).");
         }
         else if (!result.HasFailures)
         {
-            console.WriteLine($"{label} is already up to date.");
+            ansiConsole.WriteLine($"{label} is already up to date.");
         }
 
         foreach (SkillFileFailure failure in result.Failed)
         {
-            console.MarkupLine(
+            ansiConsole.MarkupLine(
                 $"[red]Failed to write {Markup.Escape(failure.RelativePath)} in {Markup.Escape(label)}: " +
                 $"{Markup.Escape(failure.Message)}[/]");
         }

@@ -31,4 +31,19 @@ public sealed record Error
     {
         return new Error(code, description, ErrorType.Problem);
     }
+
+    public static Error NotFound(string code, string description)
+    {
+        return new Error(code, description, ErrorType.NotFound);
+    }
+
+    public static Error Timeout(string code, string description)
+    {
+        return new Error(code, description, ErrorType.Timeout);
+    }
+
+    public static Error Unavailable(string code, string description)
+    {
+        return new Error(code, description, ErrorType.Unavailable);
+    }
 }

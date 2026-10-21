@@ -5,18 +5,21 @@ namespace Banguat.ExchangeRates.McpServer.Tools;
 
 public static class CurrencyArgument
 {
-    public static CurrencyCode Resolve(string currency, ICurrencyAliasCatalog aliasCatalog)
+    public const string Description =
+        "Currency alias (e.g. \"usd\", \"eur\") or Banguat's own numeric code - NOT the ISO 4217 number " +
+        "(USD is 2, not 840). See get_currencies. Defaults to \"usd\".";
+
+    public static async Task<CurrencyCode> ResolveAsync(
+        string currency, ICurrencyResolver currencyResolver, CancellationToken cancellationToken)
     {
-        if (int.TryParse(currency, out int numeric))
+        Result<CurrencyCode> resolved = await currencyResolver.ResolveAsync(currency, cancellationToken);
+        if (resolved.IsFailure)
         {
-            return new CurrencyCode(numeric);
+            throw new McpException(resolved.Error.Type == ErrorType.NotFound
+                ? $"{resolved.Error.Description} Call get_currencies to see valid codes and aliases."
+                : resolved.Error.Description);
         }
 
-        if (aliasCatalog.TryResolve(currency, out CurrencyCode code))
-        {
-            return code;
-        }
-
-        throw new McpException($"Unknown currency '{currency}'. Call get_currencies to see valid codes and aliases.");
+        return resolved.Value;
     }
 }

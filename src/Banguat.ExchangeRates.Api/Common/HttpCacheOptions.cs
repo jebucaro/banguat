@@ -6,17 +6,13 @@ namespace Banguat.ExchangeRates.Api.Common;
 /// </summary>
 public sealed class HttpCacheOptions
 {
+    public const string SectionName = "HttpCaching";
+
     /// <summary>
     /// Window during which a shared cache may serve a stale representation while refreshing in the
     /// background, so the day-boundary expiry does not produce a thundering herd at local midnight.
     /// </summary>
     public TimeSpan StaleWhileRevalidate { get; set; } = TimeSpan.FromSeconds(60);
-
-    /// <summary>
-    /// Window during which a shared cache may serve a stale representation after an origin error. Banguat's
-    /// upstream SOAP service is outside our control, so serving yesterday's rate beats returning 502.
-    /// </summary>
-    public TimeSpan StaleIfError { get; set; } = TimeSpan.FromHours(24);
 
     /// <summary>
     /// Floor applied to <c>max-age</c>. Without it, a request arriving a second before the boundary would

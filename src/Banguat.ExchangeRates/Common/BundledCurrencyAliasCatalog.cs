@@ -7,6 +7,7 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
 {
     private readonly Dictionary<string, CurrencyCode> _aliasToCode;
     private readonly Dictionary<CurrencyCode, string> _codeToAlias;
+    private readonly IReadOnlyList<string> _allAliases;
 
     public BundledCurrencyAliasCatalog()
     {
@@ -24,6 +25,7 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
         }
 
         _codeToAlias = BuildCodeToAliasIndex(_aliasToCode);
+        _allAliases = _aliasToCode.Keys.ToList().AsReadOnly();
     }
 
     internal static Dictionary<CurrencyCode, string> BuildCodeToAliasIndex(
@@ -56,5 +58,5 @@ public sealed class BundledCurrencyAliasCatalog : ICurrencyAliasCatalog
         return _codeToAlias.TryGetValue(code, out string? alias) ? alias : null;
     }
 
-    public IReadOnlyList<string> AllAliases => _aliasToCode.Keys.ToList();
+    public IReadOnlyList<string> AllAliases => _allAliases;
 }

@@ -4,8 +4,11 @@ namespace Banguat.ExchangeRates.Tests.Common;
 
 public class GuatemalaRateCalendarTests
 {
-    private static GuatemalaRateCalendar CalendarAt(string utcInstant) =>
-        new(new FixedTimeProvider(DateTimeOffset.Parse(utcInstant, System.Globalization.CultureInfo.InvariantCulture)));
+    private static GuatemalaRateCalendar CalendarAt(string utcInstant)
+    {
+        return new GuatemalaRateCalendar(new FixedTimeProvider(DateTimeOffset.Parse(utcInstant,
+            System.Globalization.CultureInfo.InvariantCulture)));
+    }
 
     // 01:00 UTC is still the previous day in Guatemala. A UTC-based "today" would be wrong here, which is
     // precisely the misclassification the calendar exists to prevent.
@@ -108,14 +111,20 @@ public class GuatemalaRateCalendarTests
     }
 
     /// <summary>UTC-6 zone that springs forward at 00:00 on 15 March, making 00:00-00:59 nonexistent.</summary>
-    private static TimeZoneInfo ZoneWithTransitionAtMidnight() => CustomZone(
-        TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 0, 0, 0), 3, 15),
-        TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 12, 0, 0), 10, 15));
+    private static TimeZoneInfo ZoneWithTransitionAtMidnight()
+    {
+        return CustomZone(
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 0, 0, 0), 3, 15),
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 12, 0, 0), 10, 15));
+    }
 
     /// <summary>UTC-6 zone that falls back at 01:00 on 15 October, making 00:00-00:59 occur twice.</summary>
-    private static TimeZoneInfo ZoneWithAmbiguousMidnight() => CustomZone(
-        TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 12, 0, 0), 3, 15),
-        TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 1, 0, 0), 10, 15));
+    private static TimeZoneInfo ZoneWithAmbiguousMidnight()
+    {
+        return CustomZone(
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 12, 0, 0), 3, 15),
+            TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 1, 0, 0), 10, 15));
+    }
 
     private static TimeZoneInfo CustomZone(
         TimeZoneInfo.TransitionTime daylightStart, TimeZoneInfo.TransitionTime daylightEnd)

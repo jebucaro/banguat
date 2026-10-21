@@ -8,7 +8,10 @@ using ModelContextProtocol.Server;
 namespace Banguat.ExchangeRates.McpServer.Tools;
 
 [McpServerToolType]
-public sealed class GetRateHistoryTool(IBanguatExchangeRateClient client, ICurrencyAliasCatalog aliasCatalog)
+public sealed class GetRateHistoryTool(
+    IBanguatExchangeRateClient client,
+    ICurrencyResolver currencyResolver,
+    ICurrencyAliasCatalog aliasCatalog)
 {
     public sealed record RateHistoryPoint(DateOnly Date, decimal Buy, decimal Sell);
 
@@ -20,9 +23,10 @@ public sealed class GetRateHistoryTool(IBanguatExchangeRateClient client, ICurre
 
     [McpServerTool(Name = "get_rate_history")]
     [Description("Gets a currency's rate history, either from a date to today (since) or over a bounded " +
-                 "range (from/to). Defaults to USD if currency is omitted.")]
+                 "range (from/to). Dates run from 1989-11-06 to today, and one call covers at most 366 days; " +
+                 "split longer periods into several calls. Defaults to USD if currency is omitted.")]
     public async Task<RateHistoryResult> GetRateHistoryAsync(
-        [Description("Currency code or alias (see get_currencies). Defaults to \"usd\".")]
+        [Description(CurrencyArgument.Description)]
         string currency = "usd",
         [Description("Start date (yyyy-MM-dd), open-ended to today. Mutually exclusive with from/to.")]
         string? since = null,
@@ -32,49 +36,25 @@ public sealed class GetRateHistoryTool(IBanguatExchangeRateClient client, ICurre
         string? to = null,
         CancellationToken cancellationToken = default)
     {
-        CurrencyCode code = CurrencyArgument.Resolve(currency, aliasCatalog);
-        string? alias = aliasCatalog.GetAlias(code);
-
-        bool sinceGiven = !string.IsNullOrWhiteSpace(since);
-        bool fromGiven = !string.IsNullOrWhiteSpace(from);
-        bool toGiven = !string.IsNullOrWhiteSpace(to);
-        bool rangeGiven = fromGiven && toGiven;
-        bool anyRangePartGiven = fromGiven || toGiven;
-
-        if (!((sinceGiven && !anyRangePartGiven) || (!sinceGiven && rangeGiven)))
+        CurrencyCode code = await CurrencyArgument.ResolveAsync(currency, currencyResolver, cancellationToken);
+        Result<GetRateHistory.Response> result = await client.GetRateHistoryAsync(
+            code, ParseOptionalDate(nameof(since), since), ParseOptionalDate(nameof(from), from),
+            ParseOptionalDate(nameof(to), to),
+            cancellationToken);
+        if (result.IsFailure)
         {
-            throw new McpException("Provide either \"since\", or both \"from\" and \"to\" (not both, not neither).");
+            throw new McpException(result.Error.Description);
         }
 
-        List<RateHistoryPoint> points;
+        List<RateHistoryPoint> points =
+            result.Value.Rates.Select(r => new RateHistoryPoint(r.Date, r.Buy, r.Sell)).ToList();
 
-        if (sinceGiven)
-        {
-            DateOnly sinceDate = ParseDate("since", since!);
-            Result<GetCurrencyRateHistorySince.Response> result =
-                await client.GetCurrencyRateHistorySinceAsync(sinceDate, code, cancellationToken);
-            if (result.IsFailure)
-            {
-                throw new McpException(result.Error.Description);
-            }
+        return new RateHistoryResult(code.Value, aliasCatalog.GetAlias(code), points.Count, points);
+    }
 
-            points = result.Value.Rates.Select(r => new RateHistoryPoint(r.Date, r.Buy, r.Sell)).ToList();
-        }
-        else
-        {
-            DateOnly fromDate = ParseDate("from", from!);
-            DateOnly toDate = ParseDate("to", to!);
-            Result<GetCurrencyRateHistory.Response> result =
-                await client.GetCurrencyRateHistoryAsync(fromDate, toDate, code, cancellationToken);
-            if (result.IsFailure)
-            {
-                throw new McpException(result.Error.Description);
-            }
-
-            points = result.Value.Rates.Select(r => new RateHistoryPoint(r.Date, r.Buy, r.Sell)).ToList();
-        }
-
-        return new RateHistoryResult(code.Value, alias, points.Count, points);
+    private static DateOnly? ParseOptionalDate(string paramName, string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : ParseDate(paramName, value);
     }
 
     private static DateOnly ParseDate(string paramName, string value)

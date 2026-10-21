@@ -4,6 +4,7 @@ using System.Text.Json;
 using Banguat.ExchangeRates.Common;
 using CliFx.Binding;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
 namespace Banguat.ExchangeRates.Cli.Commands;
 
@@ -69,72 +70,19 @@ public abstract class BanguatCommandBase(
         return aliasCatalog.GetAlias(code);
     }
 
-    protected bool TryResolveCurrency(string value, OutputMode mode, out CurrencyCode currency)
+    protected async Task<CurrencyCode?> ResolveCurrencyAsync(
+        ICurrencyResolver currencyResolver, string value, OutputMode mode)
     {
-        if (int.TryParse(value, out int numeric))
+        Result<CurrencyCode> resolved = await currencyResolver.ResolveAsync(value);
+        if (resolved.IsFailure)
         {
-            currency = new CurrencyCode(numeric);
-            return true;
+            Fail(resolved.Error.Type == ErrorType.NotFound
+                ? $"{resolved.Error.Description} Run 'currencies' to see all codes."
+                : resolved.Error.Description, mode);
+            return null;
         }
 
-        if (aliasCatalog.TryResolve(value, out currency))
-        {
-            return true;
-        }
-
-        string? suggestion = SuggestNearestAlias(value);
-        string message = suggestion is null
-            ? $"Unknown currency '{value}'. Run 'currencies' to see all codes."
-            : $"Unknown currency '{value}'. Did you mean: {suggestion}? Run 'currencies' to see all codes.";
-        Fail(message, mode);
-        currency = default;
-        return false;
-    }
-
-    private string? SuggestNearestAlias(string value)
-    {
-        const int maxSuggestDistance = 2;
-
-        string? best = null;
-        int bestDistance = int.MaxValue;
-
-        foreach (string candidate in aliasCatalog.AllAliases)
-        {
-            int distance = LevenshteinDistance(value.ToUpperInvariant(), candidate.ToUpperInvariant());
-            if (distance < bestDistance)
-            {
-                bestDistance = distance;
-                best = candidate;
-            }
-        }
-
-        return bestDistance <= maxSuggestDistance ? best : null;
-    }
-
-    private static int LevenshteinDistance(string a, string b)
-    {
-        int[,] distances = new int[a.Length + 1, b.Length + 1];
-
-        for (int i = 0; i <= a.Length; i++)
-        {
-            distances[i, 0] = i;
-        }
-
-        for (int j = 0; j <= b.Length; j++)
-        {
-            distances[0, j] = j;
-        }
-
-        for (int i = 1; i <= a.Length; i++)
-        for (int j = 1; j <= b.Length; j++)
-        {
-            int cost = a[i - 1] == b[j - 1] ? 0 : 1;
-            distances[i, j] = Math.Min(
-                Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
-                distances[i - 1, j - 1] + cost);
-        }
-
-        return distances[a.Length, b.Length];
+        return resolved.Value;
     }
 
     protected void WriteNextSteps(IReadOnlyList<string> hints, OutputMode mode)
@@ -162,6 +110,55 @@ public abstract class BanguatCommandBase(
                 Console.WriteLine($"  → {hint}");
             }
         }
+    }
+
+    protected static Table CreateTable(OutputMode mode, params (string Rich, string Plain)[] headers)
+    {
+        Table table = new Table().Border(mode == OutputMode.Rich ? TableBorder.Rounded : TableBorder.None);
+        foreach ((string rich, string plain) in headers)
+        {
+            table.AddColumn(new TableColumn(mode == OutputMode.Rich ? $"[bold]{rich}[/]" : plain));
+        }
+
+        return table;
+    }
+
+    /// <summary>Adds a row, coloring each cell that has a style when the output is rich.</summary>
+    protected static void AddRow(Table table, OutputMode mode, params (string Text, string? Style)[] cells)
+    {
+        table.AddRow(cells.Select(cell => mode == OutputMode.Rich && cell.Style is not null
+            ? new Markup($"[{cell.Style}]{Markup.Escape(cell.Text)}[/]")
+            : (IRenderable)new Text(cell.Text)));
+    }
+
+    protected void WriteNotice(string message, OutputMode mode)
+    {
+        if (mode == OutputMode.Rich)
+        {
+            Console.MarkupLine($"[yellow]{Markup.Escape(message)}[/]");
+        }
+        else
+        {
+            Console.WriteLine(message);
+        }
+    }
+
+    protected void WriteCount(int count, string noun, OutputMode mode)
+    {
+        if (mode == OutputMode.Rich)
+        {
+            Console.MarkupLine($"[grey]Showing {count} {noun}[/]");
+        }
+        else
+        {
+            Console.WriteLine($"# count: {count}");
+        }
+    }
+
+    // JSON goes straight to stdout so Spectre never wraps or styles it.
+    protected static Task WriteJsonAsync(object payload)
+    {
+        return System.Console.Out.WriteLineAsync(JsonSerializer.Serialize(payload, JsonOptions));
     }
 
     protected bool TryUnwrap<T>(Result<T> result, OutputMode mode, out T value)

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
@@ -14,9 +13,11 @@ internal sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 
 [Command("rate history",
     Description = "Show a currency's rate history, either from a date to today (--since) or over a bounded " +
-                  "range (--from/--to). Defaults to USD (2) if --currency is omitted.")]
+                  "range (--from/--to), at most 366 days from 1989-11-06 onward. Defaults to USD (2) if " +
+                  "--currency is omitted.")]
 public sealed partial class RateHistoryCommand(
     IBanguatExchangeRateClient client,
+    ICurrencyResolver currencyResolver,
     IAnsiConsole console,
     ICurrencyAliasCatalog aliasCatalog)
     : BanguatCommandBase(console, aliasCatalog), ICommand
@@ -40,140 +41,80 @@ public sealed partial class RateHistoryCommand(
             return;
         }
 
-        if (!TryValidateHistoryOptions(mode))
-        {
-            return;
-        }
-
-        if (!TryResolveCurrency(Currency, mode, out CurrencyCode currency))
+        if (await ResolveCurrencyAsync(currencyResolver, Currency, mode) is not CurrencyCode currency)
         {
             return;
         }
 
         string? currencyAlias = GetAliasFor(currency);
 
-        IReadOnlyList<RatePoint> points;
-
-        if (!string.IsNullOrWhiteSpace(Since))
+        if (!TryParseOptionalDate("since", Since, mode, out DateOnly? since) ||
+            !TryParseOptionalDate("from", From, mode, out DateOnly? from) ||
+            !TryParseOptionalDate("to", To, mode, out DateOnly? to))
         {
-            if (!TryParseDate("since", Since, mode, out DateOnly since))
-            {
-                return;
-            }
-
-            if (!TryUnwrap(await client.GetCurrencyRateHistorySinceAsync(since, currency), mode,
-                    out GetCurrencyRateHistorySince.Response response))
-            {
-                return;
-            }
-
-            points = response.Rates.Select(r => new RatePoint(r.Date, r.Buy, r.Sell)).ToList();
+            return;
         }
-        else
+
+        if (!TryUnwrap(await client.GetRateHistoryAsync(currency, since, from, to), mode,
+                out GetRateHistory.Response response))
         {
-            if (!TryParseDate("from", From!, mode, out DateOnly from) ||
-                !TryParseDate("to", To!, mode, out DateOnly to))
-            {
-                return;
-            }
-
-            if (!TryUnwrap(await client.GetCurrencyRateHistoryAsync(from, to, currency), mode,
-                    out GetCurrencyRateHistory.Response response))
-            {
-                return;
-            }
-
-            points = response.Rates.Select(r => new RatePoint(r.Date, r.Buy, r.Sell)).ToList();
+            return;
         }
+
+        List<RatePoint> points = response.Rates.Select(r => new RatePoint(r.Date, r.Buy, r.Sell)).ToList();
 
         if (mode == OutputMode.Json)
         {
-            System.Console.Out.WriteLine(JsonSerializer.Serialize(
-                new
-                {
-                    currency = currency.Value,
-                    currencyAlias,
-                    count = points.Count,
-                    history = points.Select(p => new { date = p.Date, buy = p.Buy, sell = p.Sell })
-                }, JsonOptions));
+            await WriteJsonAsync(new
+            {
+                currency = currency.Value,
+                currencyAlias,
+                count = points.Count,
+                history = points.Select(p => new { date = p.Date, buy = p.Buy, sell = p.Sell })
+            });
             return;
         }
 
         if (points.Count == 0)
         {
-            const string message = "No rate data found for the given range.";
-            if (mode == OutputMode.Rich)
-            {
-                Console.MarkupLine($"[yellow]{Markup.Escape(message)}[/]");
-            }
-            else
-            {
-                Console.WriteLine(message);
-            }
-
+            WriteNotice("No rate data found for the given range.", mode);
             return;
         }
 
-        Table table = new Table().Border(mode == OutputMode.Rich ? TableBorder.Rounded : TableBorder.None);
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Date[/]" : "date"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Currency[/]" : "currency"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Alias[/]" : "currencyAlias"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Buy[/]" : "buy"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Sell[/]" : "sell"));
-
+        Table table = CreateTable(mode,
+            ("Date", "date"), ("Currency", "currency"), ("Alias", "currencyAlias"), ("Buy", "buy"), ("Sell", "sell"));
         string currencyText = currency.Value.ToString(CultureInfo.InvariantCulture);
         string aliasText = currencyAlias ?? string.Empty;
 
         foreach (RatePoint point in points)
         {
-            string date = point.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            string buy = point.Buy.ToString(CultureInfo.InvariantCulture);
-            string sell = point.Sell.ToString(CultureInfo.InvariantCulture);
-
-            if (mode == OutputMode.Rich)
-            {
-                table.AddRow(
-                    new Markup($"[grey]{date}[/]"),
-                    new Markup($"[yellow]{currencyText}[/]"),
-                    new Markup($"[grey]{Markup.Escape(aliasText)}[/]"),
-                    new Markup($"[green]{buy}[/]"),
-                    new Markup($"[green]{sell}[/]"));
-            }
-            else
-            {
-                table.AddRow(
-                    new Text(date), new Text(currencyText), new Text(aliasText), new Text(buy), new Text(sell));
-            }
+            AddRow(table, mode,
+                (point.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "grey"),
+                (currencyText, "yellow"),
+                (aliasText, "grey"),
+                (point.Buy.ToString(CultureInfo.InvariantCulture), "green"),
+                (point.Sell.ToString(CultureInfo.InvariantCulture), "green"));
         }
 
         Console.Write(table);
-
-        if (mode == OutputMode.Rich)
-        {
-            Console.MarkupLine($"[grey]Showing {points.Count} rate points[/]");
-        }
-        else
-        {
-            Console.WriteLine($"# count: {points.Count}");
-        }
+        WriteCount(points.Count, "rate points", mode);
     }
 
-    private bool TryValidateHistoryOptions(OutputMode mode)
+    private bool TryParseOptionalDate(string optionName, string? value, OutputMode mode, out DateOnly? date)
     {
-        bool sinceGiven = !string.IsNullOrWhiteSpace(Since);
-        bool fromGiven = !string.IsNullOrWhiteSpace(From);
-        bool toGiven = !string.IsNullOrWhiteSpace(To);
-        bool rangeGiven = fromGiven && toGiven;
-        bool anyRangePartGiven = fromGiven || toGiven;
+        date = null;
 
-        bool valid = (sinceGiven && !anyRangePartGiven) || (!sinceGiven && rangeGiven);
-
-        if (!valid)
+        if (string.IsNullOrWhiteSpace(value))
         {
-            Fail("Provide either --since, or both --from and --to (not both, not neither).", mode);
+            return true;
+        }
+
+        if (!TryParseDate(optionName, value, mode, out DateOnly parsed))
+        {
             return false;
         }
 
+        date = parsed;
         return true;
     }
 }

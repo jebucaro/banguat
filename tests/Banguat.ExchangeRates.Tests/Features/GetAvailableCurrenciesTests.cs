@@ -11,6 +11,7 @@ public class GetAvailableCurrenciesTests
     // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
     private static readonly IRateCalendar Calendar =
         new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
+
     [Fact]
     public async Task Handle_Should_ReturnCatalog_OnSuccess()
     {
@@ -50,7 +51,7 @@ public class GetAvailableCurrenciesTests
     public async Task Handle_Should_PropagateTransportFailure()
     {
         FakeBanguatSoapTransport transport = new(
-            Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
+            Result.Failure<XDocument>(BanguatErrors.TransportFailure()));
         GetAvailableCurrencies.Handler handler = new(transport);
 
         Result<GetAvailableCurrencies.Response> result =
@@ -66,5 +67,35 @@ public class GetAvailableCurrenciesTests
         GetAvailableCurrencies.Query query = new();
 
         Assert.Equal(TimeSpan.FromHours(5), query.GetCacheDuration(Calendar));
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnUnexpectedShape_WhenARowHasEmptyMoneda()
+    {
+        XDocument document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesDisponiblesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesDisponiblesResult><Variables><Variable><moneda></moneda><descripcion>Quetzales</descripcion></Variable><Variable><moneda>2</moneda><descripcion>Dólares de EE.UU.</descripcion></Variable></Variables><TotalItems>2</TotalItems></VariablesDisponiblesResult></VariablesDisponiblesResponse></soap:Body></soap:Envelope>""");
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetAvailableCurrencies.Handler handler = new(transport);
+
+        Result<GetAvailableCurrencies.Response> result = await handler.Handle(
+            new GetAvailableCurrencies.Query(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task Handle_Should_ReturnUnexpectedShape_WhenTotalItemsExceedsRows()
+    {
+        XDocument document = XDocument.Parse(
+            """<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><VariablesDisponiblesResponse xmlns="http://www.banguat.gob.gt/variables/ws/"><VariablesDisponiblesResult><Variables><Variable><moneda>1</moneda><descripcion>Quetzales</descripcion></Variable><Variable><moneda>2</moneda><descripcion>Dólares de EE.UU.</descripcion></Variable></Variables><TotalItems>7</TotalItems></VariablesDisponiblesResult></VariablesDisponiblesResponse></soap:Body></soap:Envelope>""");
+        FakeBanguatSoapTransport transport = new(Result.Success(document));
+        GetAvailableCurrencies.Handler handler = new(transport);
+
+        Result<GetAvailableCurrencies.Response> result = await handler.Handle(
+            new GetAvailableCurrencies.Query(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Banguat.UnexpectedResponseShape", result.Error.Code);
     }
 }

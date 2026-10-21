@@ -13,4 +13,4 @@ builder.AddProject<Projects.Banguat_ExchangeRates_Gateway>("gateway")
     .WithReference(mcpserver)
     .WithExternalHttpEndpoints();
 
-builder.Build().Run();
+await builder.Build().RunAsync();

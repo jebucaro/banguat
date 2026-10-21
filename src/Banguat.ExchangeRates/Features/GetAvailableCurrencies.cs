@@ -13,7 +13,10 @@ public static class GetAvailableCurrencies
     {
         // The catalog changes rarely, but aligning it to the same boundary as rate data keeps one expiry
         // rule across the API and still guarantees a refresh at least once per Guatemala day.
-        public TimeSpan GetCacheDuration(IRateCalendar calendar) => calendar.TimeUntilNextDay;
+        public TimeSpan GetCacheDuration(IRateCalendar calendar)
+        {
+            return calendar.TimeUntilNextDay;
+        }
     }
 
     public sealed record CurrencyCatalogEntry(CurrencyCode Code, string Description);
@@ -46,13 +49,18 @@ public static class GetAvailableCurrencies
 
             if (resultElement is null)
             {
-                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape("VariablesDisponibles"));
+                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
             }
 
             XElement? variablesContainer = resultElement.Element(BanguatSoapNamespaces.Service + "Variables");
 
-            IReadOnlyList<SoapVariable> variables = SoapXmlParsing.ParseList(
+            IReadOnlyList<SoapVariable>? variables = SoapXmlParsing.ParseList(
                 variablesContainer, BanguatSoapNamespaces.Service + "Variable", SoapVariable.FromElement);
+
+            if (variables is null || !SoapXmlParsing.CheckTotalItems(resultElement, variables.Count))
+            {
+                return Result.Failure<Response>(BanguatErrors.UnexpectedResponseShape());
+            }
 
             List<CurrencyCatalogEntry> currencies = variables
                 .Select(variable => new CurrencyCatalogEntry(new CurrencyCode(variable.Moneda), variable.Descripcion))

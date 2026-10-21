@@ -11,6 +11,7 @@ public class GetCurrentUsdRateTextTests
     // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
     private static readonly IRateCalendar Calendar =
         new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
+
     [Fact]
     public async Task Handle_Should_ReturnRawText_OnSuccess()
     {
@@ -46,7 +47,7 @@ public class GetCurrentUsdRateTextTests
     public async Task Handle_Should_PropagateTransportFailure()
     {
         FakeBanguatSoapTransport transport = new(
-            Result.Failure<XDocument>(BanguatErrors.TransportFailure("timeout")));
+            Result.Failure<XDocument>(BanguatErrors.TransportFailure()));
         GetCurrentUsdRateText.Handler handler = new(transport);
 
         Result<GetCurrentUsdRateText.Response> result =

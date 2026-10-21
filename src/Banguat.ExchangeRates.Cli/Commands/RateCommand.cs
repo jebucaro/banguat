@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
@@ -14,6 +13,7 @@ namespace Banguat.ExchangeRates.Cli.Commands;
     Description = "Show today's buy/sell rate for a currency. Defaults to USD (2) if --currency is omitted.")]
 public sealed partial class RateCommand(
     IBanguatExchangeRateClient client,
+    ICurrencyResolver currencyResolver,
     IAnsiConsole console,
     ICurrencyAliasCatalog aliasCatalog)
     : BanguatCommandBase(console, aliasCatalog), ICommand
@@ -28,7 +28,7 @@ public sealed partial class RateCommand(
             return;
         }
 
-        if (!TryResolveCurrency(Currency, mode, out CurrencyCode currency))
+        if (await ResolveCurrencyAsync(currencyResolver, Currency, mode) is not CurrencyCode currency)
         {
             return;
         }
@@ -44,21 +44,11 @@ public sealed partial class RateCommand(
         {
             if (mode == OutputMode.Json)
             {
-                System.Console.Out.WriteLine(JsonSerializer.Serialize(
-                    new { currency = currency.Value, currencyAlias }, JsonOptions));
+                await WriteJsonAsync(new { currency = currency.Value, currencyAlias });
                 return;
             }
 
-            const string message = "No rate data available for today.";
-            if (mode == OutputMode.Rich)
-            {
-                Console.MarkupLine($"[yellow]{Markup.Escape(message)}[/]");
-            }
-            else
-            {
-                Console.WriteLine(message);
-            }
-
+            WriteNotice("No rate data available for today.", mode);
             return;
         }
 
@@ -67,45 +57,26 @@ public sealed partial class RateCommand(
 
         if (mode == OutputMode.Json)
         {
-            System.Console.Out.WriteLine(JsonSerializer.Serialize(
-                new
-                {
-                    date = point.Date,
-                    currency = currency.Value,
-                    currencyAlias,
-                    buy = point.Buy,
-                    sell = point.Sell,
-                    help = new[] { hint }
-                }, JsonOptions));
+            await WriteJsonAsync(new
+            {
+                date = point.Date,
+                currency = currency.Value,
+                currencyAlias,
+                buy = point.Buy,
+                sell = point.Sell,
+                help = new[] { hint }
+            });
             return;
         }
 
-        Table table = new Table().Border(mode == OutputMode.Rich ? TableBorder.Rounded : TableBorder.None);
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Date[/]" : "date"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Currency[/]" : "currency"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Alias[/]" : "currencyAlias"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Buy[/]" : "buy"));
-        table.AddColumn(new TableColumn(mode == OutputMode.Rich ? "[bold]Sell[/]" : "sell"));
-
-        string date = point.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        string buy = point.Buy.ToString(CultureInfo.InvariantCulture);
-        string sell = point.Sell.ToString(CultureInfo.InvariantCulture);
-        string currencyText = currency.Value.ToString(CultureInfo.InvariantCulture);
-        string aliasText = currencyAlias ?? string.Empty;
-
-        if (mode == OutputMode.Rich)
-        {
-            table.AddRow(
-                new Markup($"[grey]{date}[/]"),
-                new Markup($"[yellow]{currencyText}[/]"),
-                new Markup($"[grey]{Markup.Escape(aliasText)}[/]"),
-                new Markup($"[green]{buy}[/]"),
-                new Markup($"[green]{sell}[/]"));
-        }
-        else
-        {
-            table.AddRow(new Text(date), new Text(currencyText), new Text(aliasText), new Text(buy), new Text(sell));
-        }
+        Table table = CreateTable(mode,
+            ("Date", "date"), ("Currency", "currency"), ("Alias", "currencyAlias"), ("Buy", "buy"), ("Sell", "sell"));
+        AddRow(table, mode,
+            (point.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "grey"),
+            (currency.Value.ToString(CultureInfo.InvariantCulture), "yellow"),
+            (currencyAlias ?? string.Empty, "grey"),
+            (point.Buy.ToString(CultureInfo.InvariantCulture), "green"),
+            (point.Sell.ToString(CultureInfo.InvariantCulture), "green"));
 
         Console.Write(table);
 
