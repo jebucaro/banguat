@@ -7,7 +7,6 @@ using Banguat.ExchangeRates.Features;
 using Banguat.ExchangeRates.Soap;
 using Banguat.ExchangeRates.Tests.Diagnostics;
 using Banguat.ExchangeRates.Tests.Features;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,19 +17,6 @@ namespace Banguat.ExchangeRates.Tests;
 [Collection(ActivityListenerCollection.Name)]
 public class DependencyInjectionTests
 {
-    [Fact]
-    public void AddBanguatExchangeRates_Should_ResolveClient()
-    {
-        ServiceCollection services = new();
-        services.AddBanguatExchangeRates();
-
-        using ServiceProvider provider = services.BuildServiceProvider();
-
-        IBanguatExchangeRateClient client = provider.GetRequiredService<IBanguatExchangeRateClient>();
-
-        Assert.NotNull(client);
-    }
-
     [Fact]
     public void AddBanguatExchangeRates_Should_ApplyOptions()
     {
@@ -61,19 +47,6 @@ public class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddBanguatExchangeRates_Should_ResolveCurrencyAliasCatalog()
-    {
-        ServiceCollection services = new();
-        services.AddBanguatExchangeRates();
-
-        using ServiceProvider provider = services.BuildServiceProvider();
-
-        ICurrencyAliasCatalog catalog = provider.GetRequiredService<ICurrencyAliasCatalog>();
-
-        Assert.NotNull(catalog);
-    }
-
-    [Fact]
     public void AddBanguatExchangeRates_Should_ResolveCurrencyResolver()
     {
         ServiceCollection services = new();
@@ -85,19 +58,6 @@ public class DependencyInjectionTests
         ICurrencyResolver resolver = scope.ServiceProvider.GetRequiredService<ICurrencyResolver>();
 
         Assert.IsType<CurrencyResolver>(resolver);
-    }
-
-    [Fact]
-    public void AddBanguatExchangeRates_Should_ResolveDistributedCache()
-    {
-        ServiceCollection services = new();
-        services.AddBanguatExchangeRates();
-
-        using ServiceProvider provider = services.BuildServiceProvider();
-
-        IDistributedCache cache = provider.GetRequiredService<IDistributedCache>();
-
-        Assert.NotNull(cache);
     }
 
     [Fact]

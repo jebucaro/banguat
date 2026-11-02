@@ -1,0 +1,19 @@
+# Caddy TLS edge for the Banguat.ExchangeRates demo.
+#
+# Caddy terminates HTTPS on :443, obtains and renews a trusted Let's Encrypt
+# certificate automatically (HTTP-01 over :80), and reverse-proxies the single
+# upstream: the YARP gateway. The gateway does all application routing
+# (/api -> api, /mcp -> mcpserver), so this edge only needs one upstream.
+#
+# DEMO_DOMAIN and ACME_EMAIL are supplied via the environment (see
+# docker-compose.caddy.yml and the deployment docs). A real registered domain
+# with a DNS A record pointing at the host is required; Let's Encrypt will not
+# issue for a bare IP.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DEMO_DOMAIN} {
+	# The gateway service listens on HTTP 8080 inside the compose network.
+	reverse_proxy gateway:8080
+}
