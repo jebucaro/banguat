@@ -5,6 +5,7 @@ Banguat (Guatemala's central bank) publishes exchange rates over an old SOAP ser
 
 - **CLI + skill**: `Banguat.ExchangeRates.Cli` plus the `banguat-exchange-rates` skill it installs for Claude Code.
 - **MCP server**: `Banguat.ExchangeRates.McpServer`, over stdio (local) or HTTP (remote, behind a YARP gateway).
+- **REST API**: `Banguat.ExchangeRates.Api`, a plain HTTP API for comparison, behind the same gateway.
 
 It was built for the talk "MCP no es la unica respuesta: CLI + Skills vs MCP para agentes de IA en .NET".
 
@@ -15,7 +16,8 @@ It was built for the talk "MCP no es la unica respuesta: CLI + Skills vs MCP par
 | `Banguat.ExchangeRates` | The library: SOAP transport, parsing, caching, tracing. Both front ends use it. |
 | `Banguat.ExchangeRates.Cli` | The CLI and the skill it embeds (`skill install`). |
 | `Banguat.ExchangeRates.McpServer` | The MCP server with `get_currencies`, `get_rate` and `get_rate_history`. |
-| `Banguat.ExchangeRates.Gateway` | YARP in front of the MCP server, only `/mcp`. |
+| `Banguat.ExchangeRates.Api` | A slim REST API (`/v1/currencies`, `/v1/rates/{currency}`, `/v1/rates/{currency}/history`). |
+| `Banguat.ExchangeRates.Gateway` | YARP in front of the other two: `/api` goes to the Api, `/mcp` to the MCP server. |
 | `Banguat.ExchangeRates.AppHost` | Aspire: runs everything locally and publishes to Azure Container Apps (see `deploy/`). |
 
 ## Try it
@@ -43,7 +45,7 @@ aspire run
 ```
 
 Then point an MCP client at the gateway's `/mcp` URL (`http://localhost:5274/mcp` with the default launch
-settings). The Aspire dashboard shows the traces for MCP calls, and for CLI runs too if you set
+settings), or call the API at `http://localhost:5274/api/v1/rates/usd`. The Aspire dashboard shows the traces for MCP calls, and for CLI runs too if you set
 `OTEL_EXPORTER_OTLP_ENDPOINT` to the dashboard's OTLP endpoint.
 
 ## Tests
