@@ -7,7 +7,7 @@ namespace Banguat.ExchangeRates.Gateway.Tests;
 public class ReverseProxyConfigurationTests
 {
     [Fact]
-    public void Should_ConfigureApiAndMcpRoutesAndClusters()
+    public void Should_ConfigureOnlyTheMcpRouteAndCluster()
     {
         using WebApplicationFactory<Program> factory = new();
         using IServiceScope scope = factory.Services.CreateScope();
@@ -15,24 +15,16 @@ public class ReverseProxyConfigurationTests
 
         IProxyConfig config = configProvider.GetConfig();
 
-        RouteConfig apiRoute = Assert.Single(config.Routes, r => r.RouteId == "api");
-        Assert.Equal("/api/{**catch-all}", apiRoute.Match.Path);
-        Assert.Equal("api", apiRoute.ClusterId);
-        Assert.NotNull(apiRoute.Transforms);
-        Assert.Contains(apiRoute.Transforms!,
-            t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/api");
-
-        ClusterConfig apiCluster = Assert.Single(config.Clusters, c => c.ClusterId == "api");
-        Assert.Equal("https+http://api", apiCluster.Destinations!["api"].Address);
-
-        RouteConfig mcpRoute = Assert.Single(config.Routes, r => r.RouteId == "mcp");
+        RouteConfig mcpRoute = Assert.Single(config.Routes);
+        Assert.Equal("mcp", mcpRoute.RouteId);
         Assert.Equal("/mcp/{**catch-all}", mcpRoute.Match.Path);
         Assert.Equal("mcp", mcpRoute.ClusterId);
         Assert.NotNull(mcpRoute.Transforms);
         Assert.Contains(mcpRoute.Transforms!,
             t => t.TryGetValue("PathRemovePrefix", out string? prefix) && prefix == "/mcp");
 
-        ClusterConfig mcpCluster = Assert.Single(config.Clusters, c => c.ClusterId == "mcp");
+        ClusterConfig mcpCluster = Assert.Single(config.Clusters);
+        Assert.Equal("mcp", mcpCluster.ClusterId);
         Assert.Equal("https+http://mcpserver", mcpCluster.Destinations!["mcp"].Address);
     }
 }
