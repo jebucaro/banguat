@@ -1,10 +1,16 @@
 using Banguat.ExchangeRates;
 using Banguat.ExchangeRates.Diagnostics;
-using Banguat.ExchangeRates.McpServer.Tools;
+using Banguat.ExchangeRates.McpServer.Hosting;
 using ModelContextProtocol.AspNetCore;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+
+if (StdioHost.IsRequested(args))
+{
+    await StdioHost.RunAsync(args);
+    return;
+}
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -28,9 +34,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddMcpServer()
     .WithHttpTransport(o => o.SessionMode = HttpServerSessionMode.Stateless)
-    .WithTools<GetCurrenciesTool>()
-    .WithTools<GetRateTool>()
-    .WithTools<GetRateHistoryTool>();
+    .WithBanguatTools();
 
 // ServiceDefaults.ConfigureOpenTelemetry only listens on a source named after this app; the MCP SDK's
 // own instrumentation lives under "Experimental.ModelContextProtocol"; and the exchange-rate library's
