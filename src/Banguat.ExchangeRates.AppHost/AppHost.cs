@@ -28,17 +28,12 @@ builder.AddAzureContainerAppEnvironment("aca")
 IResourceBuilder<ValkeyResource> cache = builder.AddValkey("cache")
     .PublishAsAzureContainerApp((_, app) => Size(app, 1, 1));
 
-// These sleep when nobody's calling, so hit them once before the demo or the first request is slow.
+// These sleep when nobody's calling, so hit the gateway once before the demo or the first request is slow.
 IResourceBuilder<ProjectResource> mcpserver = builder.AddProject<Projects.Banguat_ExchangeRates_McpServer>("mcpserver")
     .WithReference(cache)
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
 
-IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.Banguat_ExchangeRates_Api>("api")
-    .WithReference(cache)
-    .PublishAsAzureContainerApp((_, app) => Size(app, 0));
-
 builder.AddProject<Projects.Banguat_ExchangeRates_Gateway>("gateway")
-    .WithReference(api)
     .WithReference(mcpserver)
     .WithExternalHttpEndpoints()
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
