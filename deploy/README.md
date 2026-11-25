@@ -91,8 +91,8 @@ curl -s -X POST https://$DEMO_HOST/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"verify","version":"1.0"}}}'
 ```
 
-Both should return HTTP 200 over HTTPS with no certificate warning. Point the CLI / your
-LLM client at `https://$DEMO_HOST`.
+Both should return HTTP 200 over HTTPS with no certificate warning. Point your LLM client
+at `https://$DEMO_HOST/mcp`; the REST API is under `https://$DEMO_HOST/api/v1/`.
 
 ## 6. Cost and the pre-demo checklist
 
