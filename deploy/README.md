@@ -1,7 +1,7 @@
 # Deploying the Banguat.ExchangeRates demo to Azure Container Apps
 
 The AppHost publishes to Azure Container Apps. The gateway (YARP) is the only public
-service; the MCP server and Valkey cache stay internal to the environment. TLS is
+service; the API, MCP server and Valkey cache stay internal to the environment. TLS is
 handled by Container Apps ingress, on the gateway's `*.azurecontainerapps.io` host.
 
 The CLI is distributed and run separately; it is not part of the deployment.
@@ -9,8 +9,9 @@ The CLI is distributed and run separately; it is not part of the deployment.
 ```
   Internet --443 TLS--> [ gateway ingress (ACA, managed cert) ]
                            |
-                       [ gateway (YARP) ] --/mcp--> [ mcpserver ] --> [ cache ]
-                       (mcpserver and cache have internal ingress only)
+                       [ gateway (YARP) ] --/api--> [ api ]       --+--> [ cache ]
+                                          --/mcp--> [ mcpserver ] --/
+                       (api, mcpserver and cache have internal ingress only)
 ```
 
 ## Who owns what
@@ -21,7 +22,7 @@ group or the registry, and never holds Azure names or IDs.
 | Owner | What |
 |---|---|
 | **Azure org setup** (OpenTofu, separate repo) | the resource group, its budget and access, the shared container registry, provider registration |
-| **This repo** (`aspire deploy`) | everything *inside* the resource group: Container Apps environment, Log Analytics, managed identity, the three container apps, plus AcrPull for that identity on the shared registry |
+| **This repo** (`aspire deploy`) | everything *inside* the resource group: Container Apps environment, Log Analytics, managed identity, the four container apps, plus AcrPull for that identity on the shared registry |
 | **Your machine** (user secrets) | subscription, region, resource group and registry names |
 
 ## 1. Prerequisites
@@ -32,7 +33,7 @@ group or the registry, and never holds Azure names or IDs.
 | **Azure CLI (`az`)** | Used to sign in; `aspire deploy` uses your `az login`. You need Owner on the resource group and AcrPush on the registry. |
 | **Aspire CLI** | 13.6+ (`aspire --version`). No `azd` needed. |
 | **Bicep** | Run `az bicep install` once before the first deploy. Otherwise `az` downloads it mid-deploy while two steps run in parallel, and one of them dies with `Text file busy`. |
-| **.NET 10 SDK + Docker** | To build the two project images. |
+| **.NET 10 SDK + Docker** | To build the three project images. |
 
 > `az` is the general Azure CLI (sign in, inspect, delete resources). `azd` (Azure
 > Developer CLI) is a separate app-deployment tool; this repo doesn't use it, because
@@ -63,7 +64,7 @@ aspire publish -o aspire-output      # Bicep, generated from AppHost.cs; don't h
 
 - `acr/acr.bicep` references the registry as `existing` (no registry is created).
 - Only `gateway/gateway.bicep` has `external: true` ingress.
-- `mcpserver`, `gateway`: `minReplicas: 0`; `cache`: exactly 1 replica.
+- `api`, `mcpserver`, `gateway`: `minReplicas: 0`; `cache`: exactly 1 replica.
 
 ## 4. Deploy
 
@@ -71,7 +72,7 @@ aspire publish -o aspire-output      # Bicep, generated from AppHost.cs; don't h
 aspire deploy
 ```
 
-This builds and pushes the gateway and mcpserver images to the shared registry and
+This builds and pushes the api, gateway and mcpserver images to the shared registry and
 deploys everything into the resource group. At the end it prints the gateway URL
 (`https://gateway.<env>.<region>.azurecontainerapps.io`).
 
@@ -83,14 +84,15 @@ deploy must not change the resource group or its tags).
 ```bash
 export DEMO_HOST=<gateway host from the deploy output>
 
+curl -s https://$DEMO_HOST/api/v1/currencies | head -c 200
 curl -s -X POST https://$DEMO_HOST/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"verify","version":"1.0"}}}'
 ```
 
-It should return HTTP 200 over HTTPS with no certificate warning. Point your LLM client
-at `https://$DEMO_HOST/mcp`.
+Both should return HTTP 200 over HTTPS with no certificate warning. Point the CLI / your
+LLM client at `https://$DEMO_HOST`.
 
 ## 6. Cost and the pre-demo checklist
 
@@ -100,7 +102,7 @@ zero), so it runs one replica all the time: roughly **$4/month** while deployed.
 shortly before the demo and tear down right after.
 
 - [ ] Deploy at least a day ahead and run the checks in section 5.
-- [ ] A minute before the talk, call `/mcp` once (a `get_rate` call) so nothing is
+- [ ] A minute before the talk, call `/api/...` and `/mcp` once each so no surface is
       cold-starting live, and so rates are cached in Valkey (shields the demo from a
       slow Banguat SOAP upstream).
 - [ ] Optional: zero cold-start risk by setting `minReplicas: 1` on the HTTP apps in
@@ -132,7 +134,7 @@ az resource list -g $RG -o table
 
 Optionally delete the images too: `az acr repository list -n <shared registry name>`,
 then `az acr repository delete -n <shared registry name> --repository <name> --yes` for
-this project's repositories (gateway, mcpserver).
+this project's repositories (api, gateway, mcpserver).
 
 Retiring the project for good (deleting the resource group, budget and access) is done
 from the Azure org setup, after the group is empty.
