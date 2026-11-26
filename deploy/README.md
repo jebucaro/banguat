@@ -72,8 +72,9 @@ aspire publish -o aspire-output      # Bicep, generated from AppHost.cs; don't h
 aspire deploy
 ```
 
-This builds and pushes the api, gateway and mcpserver images to the shared registry and
-deploys everything into the resource group. At the end it prints the gateway URL
+This builds and pushes the api, gateway and mcpserver images to the shared registry (the
+cache runs the stock Valkey image, so nothing is built for it) and deploys all four apps
+into the resource group. At the end it prints the gateway URL
 (`https://gateway.<env>.<region>.azurecontainerapps.io`).
 
 Afterwards, a `tofu plan` in the Azure org repo should still say **No changes** (the
@@ -98,7 +99,8 @@ at `https://$DEMO_HOST/mcp`; the REST API is under `https://$DEMO_HOST/api/v1/`.
 
 Sizes are set in `AppHost.cs` (0.25 vCPU / 0.5 GiB each). The HTTP apps scale to zero,
 so they cost almost nothing when idle. The cache can't (TCP ingress doesn't wake from
-zero), so it runs one replica all the time: roughly **$4/month** while deployed. Deploy
+zero), so it runs one replica all the time: roughly **$4/month** while deployed (an
+estimate, so check current Azure pricing for your region). Deploy
 shortly before the demo and tear down right after.
 
 - [ ] Deploy at least a day ahead and run the checks in section 5.
