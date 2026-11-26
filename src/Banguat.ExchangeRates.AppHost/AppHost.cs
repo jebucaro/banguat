@@ -30,27 +30,21 @@ IResourceBuilder<ValkeyResource> cache = builder.AddValkey("cache")
     .PublishAsAzureContainerApp((_, app) => Size(app, 1, 1));
 
 // These scale to zero, so hit them once before the demo or the first request drags.
-#pragma warning disable ASPIREDOTNETPROJECT001
 IResourceBuilder<DotnetProjectResource> mcpserver = builder.AddDotnetProject(
         "mcpserver", "../Banguat.ExchangeRates.McpServer/Banguat.ExchangeRates.McpServer.csproj")
     .WithReference(cache)
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
-#pragma warning restore ASPIREDOTNETPROJECT001
 
-#pragma warning disable ASPIREDOTNETPROJECT001
 IResourceBuilder<DotnetProjectResource> api = builder.AddDotnetProject(
         "api", "../Banguat.ExchangeRates.Api/Banguat.ExchangeRates.Api.csproj")
     .WithReference(cache)
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
-#pragma warning restore ASPIREDOTNETPROJECT001
 
-#pragma warning disable ASPIREDOTNETPROJECT001
 builder.AddDotnetProject("gateway", "../Banguat.ExchangeRates.Gateway/Banguat.ExchangeRates.Gateway.csproj")
     .WithReference(api)
     .WithReference(mcpserver)
     .WithExternalHttpEndpoints()
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
-#pragma warning restore ASPIREDOTNETPROJECT001
 
 await builder.Build().RunAsync();
 
