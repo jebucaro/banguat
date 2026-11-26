@@ -12,8 +12,7 @@ namespace Banguat.ExchangeRates.Cli;
 
 public static class Program
 {
-    // Fail at startup, not mid-command, if a registration has a lifetime mistake such as a scoped service
-    // resolved from the root provider.
+    // Catches lifetime mistakes (like a scoped service resolved from the root) at startup instead of mid-command.
     internal static readonly ServiceProviderOptions ProviderOptions = new()
     {
         ValidateScopes = true, ValidateOnBuild = true
@@ -23,14 +22,13 @@ public static class Program
     {
         await using ServiceProvider serviceProvider = CreateServices().BuildServiceProvider(ProviderOptions);
 
-        // Force the OTel SDK to start now (it's normally started by a generic-host hosted service,
-        // which this CLI doesn't use); no-op when OTLP export isn't configured. Disposing
-        // serviceProvider below flushes the OTLP batch exporter before the process exits.
+        // The OTel SDK normally starts from a generic-host hosted service, which this CLI doesn't use, so poke it
+        // here. Disposing the provider below flushes the exporter.
         serviceProvider.GetService<TracerProvider>();
         serviceProvider.GetService<MeterProvider>();
 
-        // One CLI invocation is one unit of work, like one HTTP request in the web hosts: the command and the
-        // scoped client and resolver it depends on all live in this scope.
+        // One invocation is one unit of work, like a web request: the command and its scoped client and resolver
+        // live in this scope.
         await using AsyncServiceScope scope = serviceProvider.CreateAsyncScope();
 
         CommandLineApplication app = new CommandLineApplicationBuilder()
@@ -38,11 +36,9 @@ public static class Program
             .UseTypeInstantiator(type => scope.ServiceProvider.GetRequiredService(type))
             .Build();
 
-        // Commands never throw for expected failures (see BanguatCommandBase.Fail) — they write
-        // their own structured error to stdout and set Environment.ExitCode themselves, so RunAsync
-        // itself returns 0 for that case. Prefer Environment.ExitCode when a command set it; fall
-        // back to RunAsync's own return value, which still correctly reports a genuinely unhandled
-        // exception (verified: RunAsync returns 1 for those without touching Environment.ExitCode).
+        // Commands handle expected failures themselves (see BanguatCommandBase.Fail): they print the error and set
+        // Environment.ExitCode, so RunAsync returns 0 for those. Prefer ExitCode when it's set; RunAsync's own
+        // value still covers unhandled exceptions (it returns 1).
         int exitCode = await app.RunAsync(args);
         return Environment.ExitCode != 0 ? Environment.ExitCode : exitCode;
     }
@@ -59,9 +55,8 @@ public static class Program
             .AsSelf()
             .WithTransientLifetime());
 
-        // Opt-in only: tracing/metrics from Banguat.ExchangeRates are exported over OTLP only when
-        // OTEL_EXPORTER_OTLP_ENDPOINT is set (e.g. pointed at the Aspire dashboard), mirroring
-        // ServiceDefaults' AddOpenTelemetryExporters gating. The CLI never requires Aspire to run.
+        // Opt-in: telemetry only goes out over OTLP when OTEL_EXPORTER_OTLP_ENDPOINT is set (the Aspire dashboard,
+        // say). The CLI never needs Aspire to run.
         string? otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
         if (!string.IsNullOrWhiteSpace(otlpEndpoint))
         {

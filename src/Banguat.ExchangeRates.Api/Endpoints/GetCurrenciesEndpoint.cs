@@ -16,7 +16,6 @@ public sealed class GetCurrenciesEndpoint : IEndpoint
     {
         app.MapGet("/currencies", HandleAsync)
             .WithTags("Currencies")
-            .WithHttpCaching()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
@@ -32,9 +31,7 @@ public sealed class GetCurrenciesEndpoint : IEndpoint
             return result.Error.ToProblem();
         }
 
-        // Ordered by code so the payload is canonical. The ETag is a hash of the serialized bytes, so if
-        // the upstream SOAP service ever returned the catalog in a different order the tag would churn and
-        // every revalidation would miss despite the data being unchanged.
+        // Ordered by code so the payload doesn't depend on SOAP's order.
         List<CurrencyEntry> currencies = result.Value.Currencies
             .OrderBy(c => c.Code.Value)
             .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAlias(c.Code)))

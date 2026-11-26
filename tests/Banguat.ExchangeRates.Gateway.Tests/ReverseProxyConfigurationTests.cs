@@ -15,6 +15,9 @@ public class ReverseProxyConfigurationTests
 
         IProxyConfig config = configProvider.GetConfig();
 
+        Assert.Equal(2, config.Routes.Count);
+        Assert.Equal(2, config.Clusters.Count);
+
         RouteConfig apiRoute = Assert.Single(config.Routes, r => r.RouteId == "api");
         Assert.Equal("/api/{**catch-all}", apiRoute.Match.Path);
         Assert.Equal("api", apiRoute.ClusterId);

@@ -27,11 +27,8 @@ internal static class SoapXmlParsing
             : null;
     }
 
-    /// <summary>
-    /// Parses every <paramref name="itemName"/> child of <paramref name="container"/>, returning <c>null</c> if any
-    /// of them fails to parse so a caller never mistakes a partial list for a complete one. A missing container
-    /// yields an empty list; <see cref="CheckTotalItems"/> catches a container that should have held items.
-    /// </summary>
+    // Null if any item fails to parse, so a partial list is never mistaken for a full one. A missing container
+    // gives an empty list, and CheckTotalItems catches one that should have had items.
     internal static IReadOnlyList<T>? ParseList<T>(XElement? container, XName itemName, Func<XElement, T?> selector)
     {
         if (container is null)
@@ -54,9 +51,6 @@ internal static class SoapXmlParsing
         return items;
     }
 
-    /// <summary>
-    /// True when the result element's &lt;TotalItems&gt; is absent or matches <paramref name="parsedCount"/>.
-    /// </summary>
     internal static bool CheckTotalItems(XElement resultElement, int parsedCount)
     {
         XElement? totalItems = resultElement.Element(BanguatSoapNamespaces.Service + "TotalItems");

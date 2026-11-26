@@ -4,7 +4,7 @@ namespace Banguat.ExchangeRates.Tests.Common;
 
 public class RateHistoryLimitsTests
 {
-    // 2026-09-23T01:00Z is still 2026-09-22 in Guatemala, so "today" here is the 22nd, not the UTC date.
+    // 2026-09-23T01:00Z is 19:00 on the 22nd in Guatemala, so the UTC and local dates disagree on purpose.
     private static readonly IRateCalendar Calendar =
         new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
 
@@ -27,8 +27,8 @@ public class RateHistoryLimitsTests
         Assert.True(result.IsSuccess);
     }
 
-    // Year 0001 is the case that made Banguat answer with a SOAP fault, which the resilience pipeline counted
-    // toward the shared circuit breaker.
+    // Year 0001 is what made Banguat answer with a SOAP fault, and the resilience pipeline counted it toward the
+    // shared circuit breaker.
     [Theory]
     [InlineData(1, 1, 1)]
     [InlineData(1900, 1, 1)]

@@ -10,8 +10,7 @@ public class GuatemalaRateCalendarTests
             System.Globalization.CultureInfo.InvariantCulture)));
     }
 
-    // 01:00 UTC is still the previous day in Guatemala. A UTC-based "today" would be wrong here, which is
-    // precisely the misclassification the calendar exists to prevent.
+    // 01:00 UTC is still the previous day in Guatemala, which is exactly what a UTC-based "today" gets wrong.
     [Fact]
     public void Today_DuringUtcMorningBeforeSix_IsPreviousGuatemalaDay()
     {
@@ -53,8 +52,8 @@ public class GuatemalaRateCalendarTests
         Assert.Equal(expectedSeconds, (int)CalendarAt(utcInstant).TimeUntilNextDay.TotalSeconds);
     }
 
-    // Standing exactly on the boundary must yield a full day, never a zero-length window, otherwise
-    // callers would emit max-age=0 and every client would revalidate immediately.
+    // Standing right on the boundary must give a full day, never a zero-length window, or entries
+    // would expire instantly.
     [Fact]
     public void TimeUntilNextDay_ExactlyAtBoundary_IsAFullDay()
     {
@@ -80,8 +79,8 @@ public class GuatemalaRateCalendarTests
         Assert.Equal(new DateOnly(1969, 12, 31), calendar.Today);
     }
 
-    // Guatemala observes no DST today. These two cases pin the gap/overlap handling so a future
-    // reintroduction cannot silently produce a boundary in the past or an hour of extra staleness.
+    // No DST in Guatemala today. These pin the gap and overlap handling so bringing it back can't produce a
+    // boundary in the past or an hour of extra staleness.
     [Fact]
     public void NextDayBoundary_WhenLocalMidnightIsSkippedByDst_AdvancesToTheFirstRealInstant()
     {
@@ -110,7 +109,7 @@ public class GuatemalaRateCalendarTests
         Assert.Equal(zone.GetAmbiguousTimeOffsets(boundary.DateTime).Max(), boundary.Offset);
     }
 
-    /// <summary>UTC-6 zone that springs forward at 00:00 on 15 March, making 00:00-00:59 nonexistent.</summary>
+    // Springs forward at 00:00 on 15 March, so 00:00-00:59 never happens.
     private static TimeZoneInfo ZoneWithTransitionAtMidnight()
     {
         return CustomZone(
@@ -118,7 +117,7 @@ public class GuatemalaRateCalendarTests
             TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 12, 0, 0), 10, 15));
     }
 
-    /// <summary>UTC-6 zone that falls back at 01:00 on 15 October, making 00:00-00:59 occur twice.</summary>
+    // Falls back at 01:00 on 15 October, so 00:00-00:59 happens twice.
     private static TimeZoneInfo ZoneWithAmbiguousMidnight()
     {
         return CustomZone(

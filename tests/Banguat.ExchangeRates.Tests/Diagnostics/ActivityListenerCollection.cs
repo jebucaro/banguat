@@ -1,10 +1,7 @@
 namespace Banguat.ExchangeRates.Tests.Diagnostics;
 
-// ActivitySource.AddActivityListener is process-global static state: a listener registered by one
-// test observes activities started by any other test running concurrently. xUnit parallelizes
-// different test classes by default, so every test class that registers a listener on
-// BanguatExchangeRatesDiagnostics.ActivitySourceName must share this collection to run sequentially
-// relative to each other and avoid cross-test activity leakage.
+// ActivitySource listeners are process-global, so one test's listener sees activities from tests running in
+// parallel. Any class that registers one on the library's source joins this collection to run sequentially.
 [CollectionDefinition(Name)]
 public sealed class ActivityListenerCollection
 {

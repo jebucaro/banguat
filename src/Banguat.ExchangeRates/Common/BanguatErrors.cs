@@ -8,8 +8,8 @@ public static class BanguatErrors
 
     private const int MaxEchoLength = 16;
 
-    // Descriptions reach API, MCP and CLI callers verbatim, so they never carry hostnames, exception messages
-    // or SOAP fault text; the raw reason is logged and traced by the transport instead.
+    // Descriptions go to API, MCP and CLI callers as-is, so no hostnames, exception text or SOAP faults here. The
+    // transport logs the real reason.
     public static Error Timeout()
     {
         return Error.Timeout(
@@ -45,10 +45,7 @@ public static class BanguatErrors
             "The Banguat exchange rate service returned an invalid response. Try again shortly.");
     }
 
-    /// <summary>
-    /// True when the error means Banguat could not be reached or did not answer, as opposed to answering
-    /// with something unusable.
-    /// </summary>
+    // Banguat didn't answer at all, as opposed to answering with something we can't use.
     internal static bool IndicatesUnreachable(Error error)
     {
         return error.Type is ErrorType.Timeout or ErrorType.Unavailable || error.Code == TransportFailureCode;
@@ -98,8 +95,7 @@ public static class BanguatErrors
                 : $"Unknown currency '{Echo(currency)}'. Did you mean: {suggestion}?");
     }
 
-    // Caller input is echoed back to API, MCP and CLI callers and lands in logs, so it is cut short and stripped
-    // of control characters that could fake log lines or drive a terminal.
+    // Caller input gets echoed back and logged, so trim it and strip control characters that could fake log lines.
     private static string Echo(string value)
     {
         string shown = value.Length > MaxEchoLength ? value[..MaxEchoLength] + "..." : value;

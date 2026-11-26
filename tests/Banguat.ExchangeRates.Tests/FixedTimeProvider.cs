@@ -1,9 +1,6 @@
 namespace Banguat.ExchangeRates.Tests;
 
-/// <summary>
-/// Minimal <see cref="TimeProvider"/> stub. Avoids taking a dependency on
-/// Microsoft.Extensions.TimeProvider.Testing for the handful of instants these tests pin.
-/// </summary>
+// Tiny TimeProvider stub, so we don't pull in Microsoft.Extensions.TimeProvider.Testing for a handful of instants.
 internal sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
 {
     public DateTimeOffset UtcNow { get; set; } = utcNow;

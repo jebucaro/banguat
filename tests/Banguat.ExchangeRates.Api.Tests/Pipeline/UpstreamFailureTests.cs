@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
@@ -35,8 +34,6 @@ public sealed class UpstreamFailureTests : IDisposable
     {
         Assert.Equal(status, (int)response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-        Assert.Contains("no-store", response.Headers.CacheControl?.ToString());
-        Assert.Null(response.Headers.ETag);
 
         using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(error.Description, body.RootElement.GetProperty("detail").GetString());
@@ -85,25 +82,6 @@ public sealed class UpstreamFailureTests : IDisposable
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
         Assert.DoesNotContain("secret detail", await response.Content.ReadAsStringAsync());
-        Assert.Contains("no-store", response.Headers.CacheControl?.ToString());
-    }
-
-    [Fact]
-    public async Task GetRate_Success_ReturnsETagAndRevalidatesTo304()
-    {
-        _factory.Client.GetCurrentRateAsync(new CurrencyCode(2), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(new GetCurrentRate.Response(
-                [new GetCurrentRate.RatePoint(new DateOnly(2026, 10, 20), 7.6m, 7.61m)])));
-
-        using HttpResponseMessage first = await _http.GetAsync("/v1/rates/usd");
-        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-        EntityTagHeaderValue etag = Assert.IsType<EntityTagHeaderValue>(first.Headers.ETag);
-
-        using HttpRequestMessage revalidate = new(HttpMethod.Get, "/v1/rates/usd");
-        revalidate.Headers.IfNoneMatch.Add(etag);
-        using HttpResponseMessage second = await _http.SendAsync(revalidate);
-
-        Assert.Equal(HttpStatusCode.NotModified, second.StatusCode);
     }
 
     [Fact]

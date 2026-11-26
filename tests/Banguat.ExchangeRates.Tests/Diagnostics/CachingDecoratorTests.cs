@@ -10,8 +10,8 @@ namespace Banguat.ExchangeRates.Tests.Diagnostics;
 
 public class CachingDecoratorTests
 {
-    // The probe queries below return a fixed duration, so the decorator tests stay focused on caching
-    // behaviour rather than on calendar arithmetic (covered by GuatemalaRateCalendarTests).
+    // The probe queries return a fixed duration, so these tests stick to caching and leave calendar
+    // math to GuatemalaRateCalendarTests.
     private static readonly IRateCalendar Calendar =
         new GuatemalaRateCalendar(new FixedTimeProvider(DateTimeOffset.UnixEpoch));
 
@@ -28,9 +28,8 @@ public class CachingDecoratorTests
         public sealed record UncacheableQuery : IQuery<string>;
     }
 
-    // Distinct declaring type from Probe so operationName ("SamplingProbe") doesn't collide with the
-    // shared, process-wide CachingDecorator.LastWarningLoggedAtUtc entries other tests in this class prime
-    // for "Probe" (e.g. via ThrowingDistributedCache).
+    // Own declaring type so the operation name doesn't share CachingDecorator's process-wide warning sampler with
+    // "Probe" (primed by tests like ThrowingDistributedCache).
     private static class SamplingProbe
     {
         public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
@@ -359,7 +358,7 @@ public class CachingDecoratorTests
         Assert.Equal(1, logger.LoggedLevels.Count(level => level == LogLevel.Debug));
     }
 
-    // Own declaring types so their operation names don't share the process-wide warning sampler with "Probe".
+    // Own declaring types, same reason as SamplingProbe.
     private static class CancellationProbe
     {
         public sealed record CacheableQuery : IQuery<string>, ICacheableQuery
@@ -415,7 +414,7 @@ public class CachingDecoratorTests
         }
     }
 
-    /// <summary>A cache whose calls behave like a backend's own timeout: cancelled without the caller cancelling.</summary>
+    // Behaves like a backend timeout: cancelled even though the caller didn't cancel.
     private sealed class TimingOutDistributedCache(bool failReads, bool failWrites) : IDistributedCache
     {
         public byte[]? Get(string key)

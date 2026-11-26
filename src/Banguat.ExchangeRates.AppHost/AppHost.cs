@@ -1,11 +1,12 @@
 using Aspire.Hosting.Azure;
+using Aspire.Hosting.Dotnet;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.OperationalInsights;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
-// The resource group and registry belong to azure-org, we only point at them. Names come from user
-// secrets so nothing about the tenant lands in git, and `aspire run` never looks at any of it.
+// The resource group and registry belong to azure-org, so we only point at them. Names live in user secrets to
+// keep the tenant out of git, and aspire run ignores them.
 IResourceBuilder<ParameterResource> acrName = builder.AddParameter("acrName");
 IResourceBuilder<ParameterResource> acrResourceGroup = builder.AddParameter("acrResourceGroup");
 
@@ -16,28 +17,30 @@ builder.AddAzureContainerAppEnvironment("aca")
     .WithAzureContainerRegistry(acr)
     .ConfigureInfrastructure(infra =>
     {
-        // An uncapped workspace is the easiest way to blow the budget, so same cap as the org one.
+        // An uncapped workspace is the easiest way to blow the budget, so this matches the org's cap.
         OperationalInsightsWorkspace logs = infra.GetProvisionableResources().OfType<OperationalInsightsWorkspace>()
             .Single();
         logs.RetentionInDays = 30;
         logs.WorkspaceCapping = new OperationalInsightsWorkspaceCapping { DailyQuotaInGB = 0.1 };
     });
 
-// TCP ingress can't wake Valkey from zero, so it's pinned to one, and a second replica would just be
-// a second empty cache.
+// TCP ingress can't wake Valkey from zero, so it's pinned to one replica. A second would just be
+// another empty cache.
 IResourceBuilder<ValkeyResource> cache = builder.AddValkey("cache")
     .PublishAsAzureContainerApp((_, app) => Size(app, 1, 1));
 
-// These sleep when nobody's calling, so hit them once before the demo or the first request is slow.
-IResourceBuilder<ProjectResource> mcpserver = builder.AddProject<Projects.Banguat_ExchangeRates_McpServer>("mcpserver")
+// These scale to zero, so hit them once before the demo or the first request drags.
+IResourceBuilder<DotnetProjectResource> mcpserver = builder.AddDotnetProject(
+        "mcpserver", "../Banguat.ExchangeRates.McpServer/Banguat.ExchangeRates.McpServer.csproj")
     .WithReference(cache)
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
 
-IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.Banguat_ExchangeRates_Api>("api")
+IResourceBuilder<DotnetProjectResource> api = builder.AddDotnetProject(
+        "api", "../Banguat.ExchangeRates.Api/Banguat.ExchangeRates.Api.csproj")
     .WithReference(cache)
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
 
-builder.AddProject<Projects.Banguat_ExchangeRates_Gateway>("gateway")
+builder.AddDotnetProject("gateway", "../Banguat.ExchangeRates.Gateway/Banguat.ExchangeRates.Gateway.csproj")
     .WithReference(api)
     .WithReference(mcpserver)
     .WithExternalHttpEndpoints()
@@ -45,7 +48,7 @@ builder.AddProject<Projects.Banguat_ExchangeRates_Gateway>("gateway")
 
 await builder.Build().RunAsync();
 
-// Aspire's defaults come out around $40 a month here, this keeps it close to the free grant.
+// Aspire's defaults land around $40 a month here; this keeps it near the free grant.
 static void Size(ContainerApp app, int minReplicas, int maxReplicas = 2)
 {
     app.Template.Scale.MinReplicas = minReplicas;

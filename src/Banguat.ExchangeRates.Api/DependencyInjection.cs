@@ -12,14 +12,6 @@ public static class DependencyInjection
             .AsImplementedInterfaces()
             .WithSingletonLifetime());
 
-        services.AddOptions<HttpCacheOptions>()
-            .BindConfiguration(HttpCacheOptions.SectionName)
-            .Validate(o => o.StaleWhileRevalidate >= TimeSpan.Zero,
-                $"{HttpCacheOptions.SectionName}:StaleWhileRevalidate must not be negative.")
-            .Validate(o => o.MinimumMaxAge >= TimeSpan.Zero,
-                $"{HttpCacheOptions.SectionName}:MinimumMaxAge must not be negative.")
-            .ValidateOnStart();
-
         return services;
     }
 }

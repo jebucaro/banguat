@@ -5,9 +5,8 @@ namespace Banguat.ExchangeRates;
 public interface ICurrencyResolver
 {
     /// <summary>
-    /// Resolves a currency alias (e.g. "USD") or a Banguat numeric code (e.g. "24") to a <see cref="CurrencyCode"/>,
-    /// failing with <see cref="BanguatErrors.UnknownCurrency"/> when it is neither, or with the upstream error when
-    /// checking a numeric code against Banguat's catalog finds Banguat unreachable.
+    /// Takes an alias ("USD") or a Banguat numeric code ("24"). Unknown input fails with UnknownCurrency, and if
+    /// checking a numeric code finds Banguat unreachable you get that upstream error instead.
     /// </summary>
     Task<Result<CurrencyCode>> ResolveAsync(string currency, CancellationToken cancellationToken = default);
 }

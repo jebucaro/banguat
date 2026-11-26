@@ -15,7 +15,6 @@ builder.AddBanguatExchangeRates();
 builder.Services.AddApiEndpoints();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
-builder.Services.AddGatewayForwardedHeaders();
 
 string[] allowedOrigins = builder.Configuration.GetSection("Api:AllowedOrigins").Get<string[]>() ?? [];
 
@@ -29,20 +28,16 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ServiceDefaults.ConfigureOpenTelemetry only adds an ActivitySource/Meter named after the app itself,
-// the exchange-rate library's domain-level spans/metrics live under BanguatExchangeRatesDiagnostics's
-// names and need to be added explicitly here for them to reach the Aspire dashboard.
+// ServiceDefaults only listens to a source named after the app, so the library's spans and metrics need adding
+// here to reach the dashboard.
 builder.Services.AddOpenTelemetry()
     .WithTracing(t => t.AddSource(BanguatExchangeRatesDiagnostics.ActivitySourceName))
     .WithMetrics(m => m.AddMeter(BanguatExchangeRatesDiagnostics.MeterName));
 
 WebApplication app = builder.Build();
 
-// First, so everything after it (OpenAPI, CORS, logging) sees the client's view of the request.
-app.UseForwardedHeaders();
-
-// Backstop for genuinely unexpected exceptions: a generic ProblemDetails 500 instead of an empty response.
-// Upstream failures never reach it; they come back as Results and map to 502/503/504.
+// Last resort for truly unexpected exceptions: a ProblemDetails 500 instead of an empty body. Upstream failures
+// never get here, they come back as Results mapped to 502/503/504.
 app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();

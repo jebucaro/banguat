@@ -1,5 +1,4 @@
 using Banguat.ExchangeRates;
-using Banguat.ExchangeRates.Api.Common;
 using Banguat.ExchangeRates.Api.Endpoints;
 using Banguat.ExchangeRates.Common;
 using Banguat.ExchangeRates.Features;
@@ -18,44 +17,6 @@ public class GetRateHistoryEndpointTests
     public GetRateHistoryEndpointTests()
     {
         _currencyResolver = new CurrencyResolver(_client, _aliasCatalog);
-    }
-
-    // 2026-09-23T01:00Z is 19:00 on 2026-09-22 in Guatemala, so five hours of the local day remain.
-    private static readonly IRateCalendar Calendar = new GuatemalaRateCalendar(
-        new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
-
-    private static TimeSpan LifetimeFor(string queryString)
-    {
-        DefaultHttpContext context = new();
-        context.Request.QueryString = new QueryString(queryString);
-
-        return GetRateHistoryEndpoint.ResolveCacheLifetime(context, Calendar);
-    }
-
-    [Fact]
-    public void ResolveCacheLifetime_ClosedPastRange_IsStable()
-    {
-        Assert.Equal(TimeSpan.FromHours(24), LifetimeFor("?from=2020-01-01&to=2020-01-05"));
-    }
-
-    // The range reaches today, so it must be refetched after the Guatemala day rolls over even though the
-    // UTC date has already advanced.
-    [Fact]
-    public void ResolveCacheLifetime_RangeEndingToday_ExpiresAtNextGuatemalaDay()
-    {
-        Assert.Equal(TimeSpan.FromHours(5), LifetimeFor("?from=2026-09-15&to=2026-09-22"));
-    }
-
-    [Fact]
-    public void ResolveCacheLifetime_SinceForm_ExpiresAtNextGuatemalaDay()
-    {
-        Assert.Equal(TimeSpan.FromHours(5), LifetimeFor("?since=2026-09-15"));
-    }
-
-    [Fact]
-    public void ResolveCacheLifetime_MalformedTo_FallsBackToTheDailyBoundary()
-    {
-        Assert.Equal(TimeSpan.FromHours(5), LifetimeFor("?from=2026-09-15&to=not-a-date"));
     }
 
     [Fact]
@@ -134,8 +95,8 @@ public class GetRateHistoryEndpointTests
         Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
     }
 
-    // Which combinations are valid is the library's rule (see GetRateHistoryTests); the endpoint only has
-    // to forward the parsed dates unchanged and surface the library's validation error as a 400.
+    // Validity rules live in the library (see GetRateHistoryTests). The endpoint just forwards the parsed dates
+    // and turns the library's error into a 400.
     [Theory]
     [InlineData(null, null, null)]
     [InlineData("2026-08-01", "2026-08-01", "2026-08-02")]

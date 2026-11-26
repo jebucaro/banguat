@@ -15,7 +15,7 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
     private const string FromParameter = "from";
     private const string ToParameter = "to";
 
-    /// <summary>The raw date query values, bound together so the handler stays under the parameter limit.</summary>
+    // Bundled so the handler stays under the parameter limit.
     internal sealed record HistoryRange(
         [FromQuery(Name = SinceParameter)] string? Since,
         [FromQuery(Name = FromParameter)] string? From,
@@ -33,30 +33,12 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
     {
         app.MapGet("/rates/{currency}/history", HandleAsync)
             .WithTags("Rates")
-            .WithHttpCaching(ResolveCacheLifetime)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
-    }
-
-    /// <summary>
-    /// Picks the cache lifetime from the requested range: a range that already closed is stable, anything
-    /// reaching today expires at the next Guatemala day so tomorrow's request sees today's rate.
-    /// </summary>
-    /// <remarks>
-    /// Delegates to the same <see cref="RateCalendarExtensions.LifetimeForRangeEnding"/> rule the query
-    /// record uses for its Valkey entry, so <c>max-age</c> and the server-side lifetime cannot disagree.
-    /// </remarks>
-    internal static TimeSpan ResolveCacheLifetime(HttpContext context, IRateCalendar calendar)
-    {
-        // The "since" form is open-ended, and a malformed "to" yields an uncached 400, so both fall through
-        // to the daily boundary.
-        return TryParseDate(context.Request.Query[ToParameter].ToString(), out DateOnly to)
-            ? calendar.LifetimeForRangeEnding(to)
-            : calendar.TimeUntilNextDay;
     }
 
     internal static async Task<Results<Ok<RateHistoryResponse>, ProblemHttpResult>> HandleAsync(

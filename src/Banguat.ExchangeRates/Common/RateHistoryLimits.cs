@@ -1,25 +1,20 @@
 namespace Banguat.ExchangeRates.Common;
 
 /// <summary>
-/// Bounds every history query before it reaches Banguat. Without them an anonymous caller could ask for
-/// dates Banguat answers with a SOAP fault (tripping the shared circuit breaker for everyone) or for decades
-/// of data under endlessly varied cache keys.
+/// Bounds history queries before they reach Banguat. Otherwise an anonymous caller can trigger SOAP faults
+/// (tripping the shared circuit breaker for everyone) or ask for decades of data under endless cache keys.
 /// </summary>
 public static class RateHistoryLimits
 {
     /// <summary>
-    /// First day Banguat's history operations return data for. Earlier starts return the same rows under a
-    /// new cache key, and very early ones make Banguat fail.
+    /// Earlier starts return the same rows under a new cache key, and very early ones make Banguat fail.
     /// </summary>
     public static readonly DateOnly EarliestDate = new(1989, 11, 6);
 
-    /// <summary>Longest range, in days with both ends included, that one query may cover.</summary>
+    /// <summary>Inclusive of both ends.</summary>
     public const int MaxDays = 366;
 
-    /// <summary>
-    /// Checks an inclusive <paramref name="from"/>..<paramref name="to"/> range. An open-ended "since" query
-    /// passes today as <paramref name="to"/>, so it is held to the same span.
-    /// </summary>
+    /// <summary>An open-ended "since" query passes today as the end, so it gets the same span limit.</summary>
     public static Result Validate(DateOnly from, DateOnly to, IRateCalendar calendar)
     {
         ArgumentNullException.ThrowIfNull(calendar);

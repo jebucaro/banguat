@@ -10,9 +10,6 @@ using OpenTelemetry.Trace;
 
 namespace Microsoft.Extensions.Hosting;
 
-// Adds common Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
-// This project should be referenced by each service project in your solution.
-// To learn more about using this project, see https://aka.ms/aspire/service-defaults
 public static class Extensions
 {
     private const string HealthEndpointPath = "/health";
@@ -28,8 +25,7 @@ public static class Extensions
 
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            // Turn on resilience by default, sized so a caller waits at most ~10 s on a hung upstream:
-            // 4 s per attempt, one retry, 10 s overall.
+            // Sized so a caller waits at most ~10 s on a hung upstream: 4 s per attempt, one retry, 10 s overall.
             http.AddStandardResilienceHandler(resilience =>
             {
                 resilience.AttemptTimeout.Timeout = TimeSpan.FromSeconds(4);
@@ -37,7 +33,6 @@ public static class Extensions
                 resilience.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(10);
             });
 
-            // Turn on service discovery by default
             http.AddServiceDiscovery();
         });
 
@@ -64,7 +59,6 @@ public static class Extensions
             {
                 tracing.AddSource(builder.Environment.ApplicationName)
                     .AddAspNetCoreInstrumentation(tracing =>
-                        // Exclude health check requests from tracing
                         tracing.Filter = context =>
                             !context.Request.Path.StartsWithSegments(HealthEndpointPath)
                             && !context.Request.Path.StartsWithSegments(AlivenessEndpointPath)
@@ -92,7 +86,6 @@ public static class Extensions
         where TBuilder : IHostApplicationBuilder
     {
         builder.Services.AddHealthChecks()
-            // Add a default liveness check to ensure app is responsive
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
         return builder;
@@ -100,14 +93,12 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
-        // Adding health checks endpoints to applications in non-development environments has security implications.
-        // See https://aka.ms/aspire/healthchecks for details before enabling these endpoints in non-development environments.
+        // Health endpoints outside development have security implications, see https://aka.ms/aspire/healthchecks
+        // before enabling them.
         if (app.Environment.IsDevelopment())
         {
-            // All health checks must pass for app to be considered ready to accept traffic after starting
             app.MapHealthChecks(HealthEndpointPath);
 
-            // Only health checks tagged with the "live" tag must pass for app to be considered alive
             app.MapHealthChecks(AlivenessEndpointPath,
                 new HealthCheckOptions { Predicate = r => r.Tags.Contains("live") });
         }

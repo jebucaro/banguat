@@ -21,10 +21,8 @@ public class RateHistoryCommandTests
         _currencyResolver = new CurrencyResolver(_client, _aliasCatalog);
     }
 
-    /// <summary>
-    /// JSON-mode output is written via System.Console.Out (bypassing the injected IAnsiConsole/TestConsole
-    /// to avoid Spectre's console-width line wrapping), so JSON-mode assertions must capture real stdout.
-    /// </summary>
+    // JSON mode writes to System.Console.Out directly (Spectre would wrap it), so these tests capture real stdout
+    // instead of the TestConsole.
     private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
     {
         TextWriter original = Console.Out;
@@ -146,8 +144,8 @@ public class RateHistoryCommandTests
         await _client.Received(1).GetRateHistoryAsync(usd, since, null, null);
     }
 
-    // Which combinations are valid is the library's rule (see GetRateHistoryTests); the command only has
-    // to forward the parsed dates unchanged and print the library's validation message.
+    // Validity rules live in the library (see GetRateHistoryTests). The command just forwards the parsed dates and
+    // prints the library's message.
     [Theory]
     [InlineData(null, null, null)]
     [InlineData("2026-08-01", "2026-08-01", "2026-08-18")]

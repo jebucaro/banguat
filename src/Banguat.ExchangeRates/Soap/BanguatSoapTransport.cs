@@ -55,7 +55,7 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient, ILogger<Bangua
         }
         catch (ExecutionRejectedException ex)
         {
-            // Any other rejection from the resilience pipeline (e.g. an open circuit) means no request was sent.
+            // Anything else the resilience pipeline rejects (an open circuit, say) means nothing was sent.
             return Fail(activity, operationName, BanguatErrors.Unavailable(), ex.Message, ex);
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
@@ -68,8 +68,8 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient, ILogger<Bangua
         }
         catch (InvalidOperationException ex) when (response is not null)
         {
-            // ReadAsStringAsync throws this when the response declares a charset it can't decode. Before a response
-            // exists it means a bad request setup, which is a bug for the host's error handling, not an upstream state.
+            // ReadAsStringAsync throws this on a charset it can't decode. With no response yet it's a bad request
+            // setup, a host-side bug and not an upstream state.
             return Fail(activity, operationName, BanguatErrors.TransportFailure(), ex.Message, ex);
         }
         finally
@@ -90,7 +90,7 @@ internal sealed class BanguatSoapTransport(HttpClient httpClient, ILogger<Bangua
                 $"HTTP {(int)statusCode}: response body was not valid XML: {ex.Message}", ex);
         }
 
-        // A SOAP 1.1 fault normally arrives with HTTP 500, so the fault check comes before the status check.
+        // SOAP 1.1 faults usually come with HTTP 500, so check for the fault before the status.
         XElement? fault = document.Descendants(BanguatSoapNamespaces.Soap + "Fault").FirstOrDefault();
         if (fault is not null)
         {

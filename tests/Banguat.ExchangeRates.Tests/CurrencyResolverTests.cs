@@ -162,8 +162,8 @@ public class CurrencyResolverTests
         await _client.Received(1).GetAvailableCurrenciesAsync(cts.Token);
     }
 
-    // Every alias is three letters, so nothing this long can be an alias, a Banguat code or close enough
-    // for a suggestion. Rejecting it before the catalog keeps a huge input from costing a fuzzy match per alias.
+    // Aliases are 3 letters, so nothing this long is an alias, a code or a plausible suggestion. Rejecting it up
+    // front spares a huge input a fuzzy match per alias.
     [Fact]
     public async Task ResolveAsync_Should_RejectOverlongInput_WithoutTouchingTheCatalog()
     {
