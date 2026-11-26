@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="17.0.0" />
     <PackageVersion Include="Aspire.Hosting.Azure.ContainerRegistry" Version="17.0.0" />
+    <PackageVersion Include="Aspire.Hosting.Dotnet" Version="17.0.0" />
     <PackageVersion Include="Aspire.Hosting.Valkey" Version="17.0.0" />
     <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="17.0.0" />
     <PackageVersion Include="CliFx" Version="3.0.1" />

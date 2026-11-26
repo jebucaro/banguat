@@ -1,4 +1,5 @@
 using Aspire.Hosting.Azure;
+using Aspire.Hosting.Dotnet;
 using Azure.Provisioning.AppContainers;
 using Azure.Provisioning.OperationalInsights;
 
@@ -29,19 +30,27 @@ IResourceBuilder<ValkeyResource> cache = builder.AddValkey("cache")
     .PublishAsAzureContainerApp((_, app) => Size(app, 1, 1));
 
 // These sleep when nobody's calling, so hit them once before the demo or the first request is slow.
-IResourceBuilder<ProjectResource> mcpserver = builder.AddProject<Projects.Banguat_ExchangeRates_McpServer>("mcpserver")
+#pragma warning disable ASPIREDOTNETPROJECT001
+IResourceBuilder<DotnetProjectResource> mcpserver = builder.AddDotnetProject(
+        "mcpserver", "../Banguat.ExchangeRates.McpServer/Banguat.ExchangeRates.McpServer.csproj")
     .WithReference(cache)
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
+#pragma warning restore ASPIREDOTNETPROJECT001
 
-IResourceBuilder<ProjectResource> api = builder.AddProject<Projects.Banguat_ExchangeRates_Api>("api")
+#pragma warning disable ASPIREDOTNETPROJECT001
+IResourceBuilder<DotnetProjectResource> api = builder.AddDotnetProject(
+        "api", "../Banguat.ExchangeRates.Api/Banguat.ExchangeRates.Api.csproj")
     .WithReference(cache)
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
+#pragma warning restore ASPIREDOTNETPROJECT001
 
-builder.AddProject<Projects.Banguat_ExchangeRates_Gateway>("gateway")
+#pragma warning disable ASPIREDOTNETPROJECT001
+builder.AddDotnetProject("gateway", "../Banguat.ExchangeRates.Gateway/Banguat.ExchangeRates.Gateway.csproj")
     .WithReference(api)
     .WithReference(mcpserver)
     .WithExternalHttpEndpoints()
     .PublishAsAzureContainerApp((_, app) => Size(app, 0));
+#pragma warning restore ASPIREDOTNETPROJECT001
 
 await builder.Build().RunAsync();
 
