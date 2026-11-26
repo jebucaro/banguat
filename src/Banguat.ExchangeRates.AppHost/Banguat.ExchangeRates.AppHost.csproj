@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.6.1">
+<Project Sdk="Aspire.AppHost.Sdk/17.0.0">
 
     <ItemGroup>
         <ProjectReference Include="..\Banguat.ExchangeRates.McpServer\Banguat.ExchangeRates.McpServer.csproj" />
@@ -7,7 +7,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost" />
         <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
         <PackageReference Include="Aspire.Hosting.Azure.ContainerRegistry" />
         <PackageReference Include="Aspire.Hosting.Valkey" />
