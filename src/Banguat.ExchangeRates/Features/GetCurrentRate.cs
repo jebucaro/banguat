@@ -12,8 +12,7 @@ public static class GetCurrentRate
 {
     public sealed record Query(CurrencyCode Currency) : IQuery<Response>, ICacheableQuery
     {
-        // Banguat publishes at most one rate per Guatemala business day, so today's value stays valid
-        // until the local day rolls over.
+        // One published rate per Guatemala business day, so today's value is good until the local day rolls over.
         public TimeSpan GetCacheDuration(IRateCalendar calendar)
         {
             return calendar.TimeUntilNextDay;
@@ -21,9 +20,8 @@ public static class GetCurrentRate
     }
 
     /// <summary>
-    /// For USD, the live service returns a single reference rate rather than a bid/ask spread —
-    /// in that case <see cref="Buy"/> and <see cref="Sell"/> are both set to that same reference rate.
-    /// For every other currency, <see cref="Buy"/> and <see cref="Sell"/> are the service's actual buy/sell quote.
+    /// For USD the service returns one reference rate, so Buy and Sell carry the same value. Other currencies get
+    /// the real buy/sell quote.
     /// </summary>
     public sealed record RatePoint(DateOnly Date, decimal Buy, decimal Sell);
 

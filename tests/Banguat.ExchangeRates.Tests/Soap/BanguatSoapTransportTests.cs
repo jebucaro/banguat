@@ -288,8 +288,8 @@ public class BanguatSoapTransportTests
     [Fact]
     public async Task InvokeAsync_Should_LetProgrammingErrorsFromSendPropagate()
     {
-        // Thrown by HttpClient for a bad request setup (e.g. no BaseAddress): a bug, not an upstream condition,
-        // so it must reach the host's 500 backstop rather than be reported as "could not be reached".
+        // HttpClient throws this for a bad request setup (no BaseAddress, say). That's a bug, not an upstream
+        // state, so it should reach the host's 500 backstop instead of "could not be reached".
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             InvokeWithAsync(_ => throw new InvalidOperationException("invalid request URI")));
     }

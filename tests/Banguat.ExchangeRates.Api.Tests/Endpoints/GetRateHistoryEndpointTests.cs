@@ -95,8 +95,8 @@ public class GetRateHistoryEndpointTests
         Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
     }
 
-    // Which combinations are valid is the library's rule (see GetRateHistoryTests); the endpoint only has
-    // to forward the parsed dates unchanged and surface the library's validation error as a 400.
+    // Validity rules live in the library (see GetRateHistoryTests). The endpoint just forwards the parsed dates
+    // and turns the library's error into a 400.
     [Theory]
     [InlineData(null, null, null)]
     [InlineData("2026-08-01", "2026-08-01", "2026-08-02")]

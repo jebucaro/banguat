@@ -23,9 +23,8 @@ public interface IBanguatExchangeRateClient
         DateOnly from, DateOnly to, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets a currency's rate history: pass <paramref name="since"/> alone for an open-ended range to today,
-    /// or both <paramref name="from"/> and <paramref name="to"/> for a bounded one. Any other combination
-    /// fails with <c>Banguat.InvalidHistoryRange</c>.
+    /// Pass since alone for an open-ended range, or from and to for a bounded one. Anything else fails with
+    /// Banguat.InvalidHistoryRange.
     /// </summary>
     Task<Result<GetRateHistory.Response>> GetRateHistoryAsync(
         CurrencyCode currency,

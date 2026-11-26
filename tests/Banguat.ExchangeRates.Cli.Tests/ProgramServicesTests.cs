@@ -21,7 +21,7 @@ public class ProgramServicesTests
     [Fact]
     public void CreateServices_Should_BuildWithScopeAndBuildValidation()
     {
-        // ValidateOnBuild walks every registration, so a lifetime mistake throws here instead of mid-command.
+        // ValidateOnBuild checks every registration, so a lifetime mistake fails here and not mid-command.
         using ServiceProvider provider = Program.CreateServices().BuildServiceProvider(Program.ProviderOptions);
 
         Assert.NotNull(provider);
@@ -42,8 +42,8 @@ public class ProgramServicesTests
     {
         using ServiceProvider provider = Program.CreateServices().BuildServiceProvider(Program.ProviderOptions);
 
-        // Regression guard: Program used to resolve commands from the root provider, which silently turned the
-        // scoped client and resolver into process-wide singletons.
+        // Regression guard: Program used to resolve commands from the root provider, quietly turning the scoped
+        // client and resolver into singletons.
         Assert.Throws<InvalidOperationException>(() =>
             provider.GetRequiredService<Commands.RateHistoryCommand>());
     }

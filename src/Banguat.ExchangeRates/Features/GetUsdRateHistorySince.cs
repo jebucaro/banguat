@@ -13,8 +13,6 @@ public static class GetUsdRateHistorySince
 {
     public sealed record Query(DateOnly Since) : IQuery<Response>, ICacheableQuery
     {
-        // An open-ended range implicitly runs to today, so it must be refetched once the Guatemala day
-        // rolls over in order to include the newly published rate.
         public TimeSpan GetCacheDuration(IRateCalendar calendar)
         {
             return calendar.TimeUntilNextDay;

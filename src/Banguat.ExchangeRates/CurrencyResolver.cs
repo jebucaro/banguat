@@ -9,8 +9,8 @@ public sealed class CurrencyResolver(IBanguatExchangeRateClient client, ICurrenc
 {
     private const int MaxSuggestDistance = 2;
 
-    // Aliases are three letters and Banguat codes fit in an int, so anything longer is unknown. Checking first
-    // keeps a huge input from paying for a fuzzy match against every alias.
+    // Aliases are 3 letters and codes fit in an int, so anything longer is unknown. Checking first spares a huge
+    // input a fuzzy match against every alias.
     private const int MaxInputLength = 16;
 
     public async Task<Result<CurrencyCode>> ResolveAsync(
@@ -26,7 +26,6 @@ public sealed class CurrencyResolver(IBanguatExchangeRateClient client, ICurrenc
             return Result.Success(aliased);
         }
 
-        // Digits only: a sign, whitespace or a culture-specific format is not a Banguat code.
         if (!int.TryParse(currency, NumberStyles.None, CultureInfo.InvariantCulture, out int numeric))
         {
             return Result.Failure<CurrencyCode>(
@@ -35,7 +34,7 @@ public sealed class CurrencyResolver(IBanguatExchangeRateClient client, ICurrenc
 
         CurrencyCode code = new(numeric);
 
-        // A code with a bundled alias is known to exist, so it skips the live lookup.
+        // A bundled alias means the code exists, so no live lookup.
         if (aliasCatalog.GetAlias(code) is not null)
         {
             return Result.Success(code);
@@ -51,8 +50,8 @@ public sealed class CurrencyResolver(IBanguatExchangeRateClient client, ICurrenc
 
         if (available.IsFailure)
         {
-            // Banguat is down: stop here so the caller gets the gateway error after one call, not two.
-            // Any other catalog failure fails open and lets the rate request report its own outcome.
+            // Banguat is down, so stop here and return the gateway error after one call instead of two. Any other
+            // catalog failure fails open and the rate request reports its own result.
             return BanguatErrors.IndicatesUnreachable(available.Error)
                 ? Result.Failure<CurrencyCode>(available.Error)
                 : Result.Success(code);

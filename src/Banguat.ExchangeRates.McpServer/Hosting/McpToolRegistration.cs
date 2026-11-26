@@ -5,7 +5,7 @@ namespace Banguat.ExchangeRates.McpServer.Hosting;
 
 internal static class McpToolRegistration
 {
-    // One place for the tool list, shared by the HTTP and stdio hosts.
+    // The tool list lives here so HTTP and stdio can't drift apart.
     internal static IMcpServerBuilder WithBanguatTools(this IMcpServerBuilder builder)
     {
         return builder

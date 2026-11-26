@@ -4,8 +4,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-// https+http lets service discovery pick the https endpoint when the target exposes one, and only fall back
-// to plain http when it doesn't.
+// https+http lets service discovery use https when the target has it and fall back to http when it doesn't.
 string apiDestination = builder.Configuration["Destinations:Api"] ?? "https+http://api";
 string mcpDestination = builder.Configuration["Destinations:Mcp"] ?? "https+http://mcpserver";
 

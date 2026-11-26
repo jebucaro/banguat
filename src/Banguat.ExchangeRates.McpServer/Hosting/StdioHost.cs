@@ -15,7 +15,7 @@ internal static class StdioHost
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args.Where(arg => arg != Flag).ToArray());
 
-        // stdout carries the MCP protocol, so every log line has to go to stderr.
+        // stdout is the MCP protocol, so logs go to stderr.
         builder.Logging.ClearProviders();
         builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 

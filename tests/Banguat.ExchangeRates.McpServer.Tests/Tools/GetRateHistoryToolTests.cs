@@ -70,8 +70,8 @@ public class GetRateHistoryToolTests
         Assert.Empty(result.History);
     }
 
-    // Which combinations are valid is the library's rule (see GetRateHistoryTests); the tool only has to
-    // forward the parsed dates unchanged and surface the library's validation message.
+    // Validity rules live in the library (see GetRateHistoryTests). The tool just forwards the parsed dates and
+    // surfaces the library's validation message.
     [Theory]
     [InlineData(null, null, null)]
     [InlineData("2026-08-01", "2026-08-01", "2026-08-02")]

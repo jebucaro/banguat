@@ -5,7 +5,7 @@ using Spectre.Console.Testing;
 
 namespace Banguat.ExchangeRates.Cli.Tests;
 
-// Shares the collection with the other command tests because they all write the process-wide Environment.ExitCode.
+// Same collection as the other command tests, since they all touch the process-wide Environment.ExitCode.
 [Collection("ConsoleOutRedirect")]
 public class SkillInstallCommandTests
 {

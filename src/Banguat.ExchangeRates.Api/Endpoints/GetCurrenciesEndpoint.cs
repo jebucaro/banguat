@@ -31,7 +31,7 @@ public sealed class GetCurrenciesEndpoint : IEndpoint
             return result.Error.ToProblem();
         }
 
-        // Ordered by code so the payload is canonical and does not depend on the upstream SOAP service's order.
+        // Ordered by code so the payload doesn't depend on SOAP's order.
         List<CurrencyEntry> currencies = result.Value.Currencies
             .OrderBy(c => c.Code.Value)
             .Select(c => new CurrencyEntry(c.Code.Value, c.Description, aliasCatalog.GetAlias(c.Code)))

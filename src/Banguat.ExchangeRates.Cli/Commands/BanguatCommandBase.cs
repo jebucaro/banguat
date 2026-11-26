@@ -123,7 +123,6 @@ public abstract class BanguatCommandBase(
         return table;
     }
 
-    /// <summary>Adds a row, coloring each cell that has a style when the output is rich.</summary>
     protected static void AddRow(Table table, OutputMode mode, params (string Text, string? Style)[] cells)
     {
         table.AddRow(cells.Select(cell => mode == OutputMode.Rich && cell.Style is not null
@@ -155,7 +154,7 @@ public abstract class BanguatCommandBase(
         }
     }
 
-    // JSON goes straight to stdout so Spectre never wraps or styles it.
+    // Straight to stdout so Spectre never wraps or styles it.
     protected static Task WriteJsonAsync(object payload)
     {
         return System.Console.Out.WriteLineAsync(JsonSerializer.Serialize(payload, JsonOptions));

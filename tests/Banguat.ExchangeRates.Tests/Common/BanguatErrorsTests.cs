@@ -104,8 +104,7 @@ public class BanguatErrorsTests
         Assert.Contains("not ISO 4217", error.Description);
     }
 
-    // The description reaches API, MCP and CLI callers and the MCP server's logs, so a multi-megabyte input
-    // must not come back verbatim.
+    // The description goes to every caller and into logs, so a multi-megabyte input can't come back verbatim.
     [Fact]
     public void UnknownCurrency_Should_TruncateLongInput()
     {

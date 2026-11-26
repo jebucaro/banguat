@@ -26,8 +26,8 @@ public class StdioTransportTests
             tools.Select(tool => tool.Name).Order().ToArray());
     }
 
-    // The host logs at Information on startup and shutdown. Anything of that on stdout would corrupt the
-    // protocol stream, so a server that never receives a message must leave stdout empty.
+    // The host logs at Information on startup and shutdown, and any of that on stdout would corrupt the protocol.
+    // So with no messages sent, stdout has to stay empty.
     [Fact]
     public async Task Stdio_WhenStdinCloses_ExitsCleanlyWithNothingOnStdout()
     {

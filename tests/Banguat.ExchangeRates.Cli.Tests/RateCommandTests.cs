@@ -26,10 +26,8 @@ public class RateCommandTests
         return new GetCurrentRate.Response([new GetCurrentRate.RatePoint(date, buy, sell)]);
     }
 
-    /// <summary>
-    /// JSON-mode output is written via System.Console.Out (bypassing the injected IAnsiConsole/TestConsole
-    /// to avoid Spectre's console-width line wrapping), so JSON-mode assertions must capture real stdout.
-    /// </summary>
+    // JSON mode writes to System.Console.Out directly (Spectre would wrap it), so these tests capture real stdout
+    // instead of the TestConsole.
     private static async Task<string> CaptureStdOutAsync(Func<ValueTask> action)
     {
         TextWriter original = Console.Out;

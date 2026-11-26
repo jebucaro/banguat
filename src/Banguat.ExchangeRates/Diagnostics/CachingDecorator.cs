@@ -45,7 +45,7 @@ internal static partial class CachingDecorator
                 TimeSpan duration = cachingOptions.Value.DurationOverrides.GetValueOrDefault(
                     operationName, cacheableQuery.GetCacheDuration(calendar));
 
-                // A zero (or negative) duration is how an operator turns caching off for one operation.
+                // Zero or negative is how an operator turns caching off for one operation.
                 if (duration > TimeSpan.Zero)
                 {
                     await TrySetAsync(cacheKey, operationName, result.Value, duration, cancellationToken);
@@ -73,7 +73,8 @@ internal static partial class CachingDecorator
                     1, new KeyValuePair<string, object?>("outcome", "hit"));
                 return result;
             }
-            // A cache backend's own timeout surfaces as a cancellation too; only the caller's cancellation propagates.
+            // A cache backend's own timeout looks like a cancellation too, so only the
+            // caller's cancellation propagates.
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
                 BanguatExchangeRatesDiagnostics.CacheLookupCount.Add(

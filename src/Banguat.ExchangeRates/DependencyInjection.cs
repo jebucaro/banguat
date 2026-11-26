@@ -13,9 +13,7 @@ namespace Banguat.ExchangeRates;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Registers the exchange-rate client for a host with configuration, binding the
-    /// <see cref="BanguatExchangeRateClientOptions.SectionName"/> and <see cref="CachingOptions.SectionName"/>
-    /// sections. The optional delegates run after binding, so code wins over configuration.
+    /// Binds the options from configuration. The delegates run after binding, so code wins over config.
     /// </summary>
     public static IHostApplicationBuilder AddBanguatExchangeRates(
         this IHostApplicationBuilder builder,
@@ -32,9 +30,7 @@ public static class DependencyInjection
         return builder;
     }
 
-    /// <summary>
-    /// Registers the exchange-rate client from code alone, for hosts without configuration such as the CLI.
-    /// </summary>
+    /// <summary>Code-only registration, for hosts without configuration like the CLI.</summary>
     public static IServiceCollection AddBanguatExchangeRates(
         this IServiceCollection services,
         Action<BanguatExchangeRateClientOptions>? configure = null,
@@ -47,8 +43,8 @@ public static class DependencyInjection
             clientOptions.Configure(configure);
         }
 
-        // ValidateOnStart makes a generic host refuse to start on a bad value; hosts without one, such as the
-        // CLI, still fail on first use with the same message instead of a confusing HttpClient error.
+        // ValidateOnStart stops a generic host on a bad value. Hosts without one (the CLI) fail on first use with
+        // the same message instead of a confusing HttpClient error.
         clientOptions
             .Validate(o => o.BaseAddress is { IsAbsoluteUri: true },
                 $"{BanguatExchangeRateClientOptions.SectionName}:BaseAddress must be an absolute URI.")
@@ -69,8 +65,8 @@ public static class DependencyInjection
 
         services.AddDistributedMemoryCache();
 
-        // Hosts that call AddServiceDefaults also wrap this client in the standard resilience pipeline, sized to
-        // the same budget there; this timeout is what bounds hosts without it, such as the CLI.
+        // Hosts that call AddServiceDefaults get the standard resilience pipeline on top. This timeout is what
+        // bounds hosts without it, like the CLI.
         services.AddHttpClient<IBanguatSoapTransport, BanguatSoapTransport>((provider, http) =>
         {
             BanguatExchangeRateClientOptions options =
@@ -94,7 +90,7 @@ public static class DependencyInjection
         services.AddSingleton<ICurrencyAliasCatalog, BundledCurrencyAliasCatalog>();
         services.AddScoped<ICurrencyResolver, CurrencyResolver>();
 
-        // TryAdd so a host (or a test) can supply its own clock before calling this method.
+        // TryAdd so a host or a test can bring its own clock.
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IRateCalendar, GuatemalaRateCalendar>();
 

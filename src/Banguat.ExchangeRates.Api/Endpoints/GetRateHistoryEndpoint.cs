@@ -15,7 +15,7 @@ public sealed class GetRateHistoryEndpoint : IEndpoint
     private const string FromParameter = "from";
     private const string ToParameter = "to";
 
-    /// <summary>The raw date query values, bound together so the handler stays under the parameter limit.</summary>
+    // Bundled so the handler stays under the parameter limit.
     internal sealed record HistoryRange(
         [FromQuery(Name = SinceParameter)] string? Since,
         [FromQuery(Name = FromParameter)] string? From,

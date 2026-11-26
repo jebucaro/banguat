@@ -8,8 +8,7 @@ namespace Banguat.ExchangeRates.Tests.Features;
 
 public class GetRateHistoryTests
 {
-    // 2026-09-23T01:00Z is 19:00 on 2026-09-22 in Guatemala: the UTC date has already rolled over while
-    // the Guatemala day still has five hours left. Pinning this instant keeps the expected values explicit.
+    // 2026-09-23T01:00Z is 19:00 on the 22nd in Guatemala, so the UTC and local dates disagree on purpose.
     private static readonly IRateCalendar Calendar =
         new GuatemalaRateCalendar(new FixedTimeProvider(new DateTimeOffset(2026, 9, 23, 1, 0, 0, TimeSpan.Zero)));
 
@@ -194,16 +193,16 @@ public class GetRateHistoryTests
         Assert.Equal(CacheDurationDefaults.StableHistory, query.GetCacheDuration(Calendar));
     }
 
-    // Regression guard: the boundary used to be evaluated with DateTime.UtcNow, so during the final six
-    // hours of a Guatemala day a range ending today was misread as closed history and cached for 24h.
+    // Regression guard: the boundary used DateTime.UtcNow, so in the last six hours of a Guatemala day a range
+    // ending today looked like closed history and got cached for 24h.
     [Fact]
     public void GetCacheDuration_Should_Range_ExpireAtNextGuatemalaDay_WhenRangeEndsToday()
     {
         GetRateHistory.Query query = new(
             new CurrencyCode(24), From: new DateOnly(2026, 9, 15), To: new DateOnly(2026, 9, 22));
 
-        // At this instant the UTC date is already the 23rd while Guatemala is still on the 22nd, so the
-        // two boundaries disagree and the old comparison took the wrong branch.
+        // Here UTC is already the 23rd while Guatemala is still on the 22nd, so the old comparison took
+        // the wrong branch.
         DateOnly utcToday = DateOnly.FromDateTime(new DateTime(2026, 9, 23, 1, 0, 0, DateTimeKind.Utc));
         Assert.True(query.To!.Value < utcToday, "the superseded UTC check classified this range as closed history");
         Assert.False(query.To!.Value < Calendar.Today, "the Guatemala calendar sees a range that reaches today");

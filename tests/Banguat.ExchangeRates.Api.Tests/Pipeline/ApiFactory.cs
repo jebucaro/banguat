@@ -10,10 +10,7 @@ using NSubstitute;
 
 namespace Banguat.ExchangeRates.Api.Tests.Pipeline;
 
-/// <summary>
-/// Runs the real API pipeline (routing, /v1 group, exception handling) with the Banguat
-/// client substituted and an in-memory cache in place of Valkey.
-/// </summary>
+// Real API pipeline with the Banguat client substituted and an in-memory cache instead of Valkey.
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     public IBanguatExchangeRateClient Client { get; } = Substitute.For<IBanguatExchangeRateClient>();

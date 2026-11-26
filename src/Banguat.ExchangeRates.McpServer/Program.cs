@@ -36,10 +36,8 @@ builder.Services.AddMcpServer()
     .WithHttpTransport(o => o.SessionMode = HttpServerSessionMode.Stateless)
     .WithBanguatTools();
 
-// ServiceDefaults.ConfigureOpenTelemetry only listens on a source named after this app; the MCP SDK's
-// own instrumentation lives under "Experimental.ModelContextProtocol"; and the exchange-rate library's
-// domain-level spans/metrics live under BanguatExchangeRatesDiagnostics's names — both need to be added
-// explicitly for their spans/metrics to reach the Aspire dashboard.
+// ServiceDefaults only listens to a source named after the app. The MCP SDK and the library publish under their
+// own names, so add both for their telemetry to reach the dashboard.
 builder.Services.AddOpenTelemetry()
     .WithTracing(t => t
         .AddSource("Experimental.ModelContextProtocol")

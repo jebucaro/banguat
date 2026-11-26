@@ -7,8 +7,7 @@ namespace Banguat.ExchangeRates.Gateway.Tests;
 
 public sealed class ForwardedHeadersTests : IAsyncLifetime
 {
-    // Stands in for whichever backend a route points at: echoes back the path and forwarding headers
-    // the gateway sent.
+    // Stands in for the backend: echoes the path and forwarding headers the gateway sent.
     private readonly WebApplication _backend = CreateEchoBackend();
 
     public Task InitializeAsync()
@@ -36,7 +35,7 @@ public sealed class ForwardedHeadersTests : IAsyncLifetime
         }
     }
 
-    // Clients are configured with https://host/mcp (or /api), no trailing slash and no sub-path.
+    // Clients are configured with https://host/mcp (or /api): no trailing slash, no sub-path.
     [Theory]
     [InlineData("Destinations:Mcp", "/mcp")]
     [InlineData("Destinations:Api", "/api")]

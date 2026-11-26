@@ -10,9 +10,8 @@ using Banguat.ExchangeRates.Soap.Models;
 namespace Banguat.ExchangeRates.Features;
 
 /// <summary>
-/// A currency's rate history, either open-ended from <see cref="Query.Since"/> to today or over a bounded
-/// <see cref="Query.From"/>/<see cref="Query.To"/> range. Banguat exposes the two shapes as separate SOAP
-/// operations; this slice picks the operation so every host shares one rule for which inputs are valid.
+/// Banguat has separate SOAP operations for open-ended and bounded history. This picks the right one so every host
+/// shares one rule for valid inputs.
 /// </summary>
 public static class GetRateHistory
 {
@@ -22,9 +21,8 @@ public static class GetRateHistory
         DateOnly? From = null,
         DateOnly? To = null) : IQuery<Response>, ICacheableQuery
     {
-        // A range that ended before today can no longer gain data points. A range that reaches today, and
-        // the open-ended "since" form, must be refetched once the Guatemala day rolls over so tomorrow picks
-        // up today's published rate.
+        // Ranges that ended before today can't gain points. Ones reaching today, and the open-ended "since", get
+        // refetched after the Guatemala day rolls over to pick up the new rate.
         public TimeSpan GetCacheDuration(IRateCalendar calendar)
         {
             return To is { } to ? calendar.LifetimeForRangeEnding(to) : calendar.TimeUntilNextDay;
@@ -48,8 +46,8 @@ public static class GetRateHistory
             string operationName;
             XElement request;
 
-            // Exactly one shape is valid: "since" alone, or both ends of a range. Anything else is rejected
-            // before a network call so hosts never need their own copy of this rule.
+            // Only "since" alone or both ends are valid. Anything else is rejected before any network call, so
+            // hosts don't each copy the rule.
             if (query is { Since: { } since, From: null, To: null })
             {
                 Result limits = RateHistoryLimits.Validate(since, calendar.Today, calendar);
@@ -113,7 +111,7 @@ public static class GetRateHistory
 
     internal static class Parser
     {
-        // Both operations answer with the same <Vars>/<Var> payload, wrapped in a "{operation}Result" element.
+        // Both operations return the same <Vars>/<Var> payload inside a "{operation}Result" element.
         internal static Result<Response> Parse(XDocument document, string operationName)
         {
             XElement? resultElement = document
