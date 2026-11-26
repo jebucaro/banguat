@@ -31,9 +31,9 @@ group or the registry, and never holds Azure names or IDs.
 |-------------|--------|
 | **Resource group + registry** | Created by the Azure org setup. Ask its owner (or run `tofu output` there) for the resource group name and the `container_registry` name / resource group. |
 | **Azure CLI (`az`)** | Used to sign in; `aspire deploy` uses your `az login`. You need Owner on the resource group and AcrPush on the registry. |
-| **Aspire CLI** | 13.6+ (`aspire --version`). No `azd` needed. |
+| **Aspire CLI** | 17+ (`aspire --version`). No `azd` needed. |
 | **Bicep** | Run `az bicep install` once before the first deploy. Otherwise `az` downloads it mid-deploy while two steps run in parallel, and one of them dies with `Text file busy`. |
-| **.NET 10 SDK + Docker** | To build the three project images. |
+| **.NET 11 SDK + Docker** | To build the three project images. |
 
 > `az` is the general Azure CLI (sign in, inspect, delete resources). `azd` (Azure
 > Developer CLI) is a separate app-deployment tool; this repo doesn't use it, because
