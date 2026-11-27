@@ -5,7 +5,7 @@ using ModelContextProtocol.Client;
 using ModelContextProtocol.Extensions.Skills;
 using ModelContextProtocol.Protocol;
 
-#pragma warning disable MCPEXP005 // The Skills extension is experimental.
+#pragma warning disable MCPEXP005 // The Skills extension is experimental, and nearly every member here uses it.
 
 namespace Banguat.ExchangeRates.McpServer.Tests;
 
@@ -16,7 +16,7 @@ public partial class SkillsOverMcpTests
 
     private static readonly string ServerAssembly = typeof(GetRateTool).Assembly.Location;
 
-    // The server is started from the test's working directory, not its own, the way Claude Code launches it from
+    // ConnectAsync starts the server from the temp folder, not its own, the way Claude Code launches it from
     // wherever the user is. The skills path is built from AppContext.BaseDirectory, so this still has to find them.
     // If the Skills folder is missing from the output, the server dies at startup with DirectoryNotFoundException,
     // tools included. Loud on purpose: a server that quietly drops its skill is worse.
@@ -82,7 +82,8 @@ public partial class SkillsOverMcpTests
     {
         StdioClientTransport transport = new(new StdioClientTransportOptions
         {
-            Name = "banguat", Command = "dotnet", Arguments = [ServerAssembly, "--stdio"]
+            Name = "banguat", Command = "dotnet", Arguments = [ServerAssembly, "--stdio"],
+            WorkingDirectory = Path.GetTempPath()
         });
 
         return McpClient.CreateAsync(transport, cancellationToken: cancellationToken);
