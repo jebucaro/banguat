@@ -38,6 +38,9 @@ dotnet run --no-build --project src/Banguat.ExchangeRates.Cli -- skill install -
 claude mcp add banguat -- dotnet run --no-build --project src/Banguat.ExchangeRates.McpServer -- --stdio
 ```
 
+The server also serves its own skill, `banguat-exchange-rates-mcp`, through Skills over MCP. Claude Code 2.1.331 or later
+lists it as `/banguat:banguat-exchange-rates-mcp` in an interactive session (not `claude -p`), with nothing to install.
+
 **MCP over HTTP (remote shape)**
 
 ```bash

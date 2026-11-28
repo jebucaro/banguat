@@ -8,6 +8,11 @@
     <ItemGroup>
         <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching"/>
         <PackageReference Include="ModelContextProtocol.AspNetCore"/>
+        <PackageReference Include="ModelContextProtocol.Extensions.Skills"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Skills\**\*" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 
     <ItemGroup>
